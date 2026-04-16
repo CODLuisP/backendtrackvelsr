@@ -14,26 +14,17 @@ namespace VelsatBackendAPI.Data.Repositories
     {
         private readonly string _defaultConnectionString;
         private readonly string _secondConnectionString;
-        private readonly string _doConnectionString;
 
         private MySqlConnection _defaultConnection;
         private MySqlConnection _secondConnection;
-        private MySqlConnection _doConnection;
 
         private readonly Lazy<IDatosCargainicialService> _datosCargaInicialService;
         private readonly Lazy<IServidorRepository> _servidorRepository;
         private readonly Lazy<IHistoricosRepository> _historicosRepository;
         private readonly Lazy<IKilometrosRepository> _kilometrosRepository;
-        private readonly Lazy<IKmServicioRepository> _kmServicioRepository;
-        private readonly Lazy<IRecorridoRepository> _recorridoRepository;
         private readonly Lazy<IUserRepository> _userRepository;
-        private readonly Lazy<IGacelaRepository> _gacelaRepository;
-        private readonly Lazy<IPasajerosRepository> _pasajeroRepository;
-        private readonly Lazy<IPreplanRepository> _preplanRepository;
-        private readonly Lazy<ITurnosRepository> _turnosRepository;
-        private readonly Lazy<ITalmaRepository> _talmaRepository;
         private readonly Lazy<IAdminRepository> _adminRepository;
-
+        private readonly Lazy<IGeocercaRepository> _geocercaRepository;
 
         private bool _disposed = false;
         private readonly object _lockObject = new object();
@@ -46,26 +37,19 @@ namespace VelsatBackendAPI.Data.Repositories
             _secondConnectionString = configuration.SecondConnection // ✅ NUEVO
                 ?? throw new ArgumentNullException(nameof(configuration.SecondConnection));
 
-            _doConnectionString = configuration.DOConnection // ✅ NUEVA
-           ?? throw new ArgumentNullException(nameof(configuration.DOConnection));
-
 
             // ✅ Inicializar servicio SIN transacción (segundo parámetro = null)
             _datosCargaInicialService = new Lazy<IDatosCargainicialService>(() => new DatosCargainicialService(DefaultConnection, null));
             _servidorRepository = new Lazy<IServidorRepository>(() => new ServidorRepository(DefaultConnection, null));
             _historicosRepository = new Lazy<IHistoricosRepository>(() => new HistoricosRepository(DefaultConnection, SecondConnection, null, null));
             _kilometrosRepository = new Lazy<IKilometrosRepository>(() => new KilometrosRepository(DefaultConnection, SecondConnection, null, null));
-            _kmServicioRepository = new Lazy<IKmServicioRepository>(() => new KmServicioRepository(DefaultConnection, SecondConnection, null, null, DOConnection, null));
-            _recorridoRepository = new Lazy<IRecorridoRepository>(() => new RecorridoRepository(DOConnection, null));
             _userRepository = new Lazy<IUserRepository>(() => new UserRepository(DefaultConnection, null));
-            _gacelaRepository = new Lazy<IGacelaRepository>(() => new GacelaRepository(DefaultConnection, null, DOConnection, null));
-            _pasajeroRepository = new Lazy<IPasajerosRepository>(() => new PasajerosRepository(DefaultConnection, null, DOConnection, null));
-            _preplanRepository = new Lazy<IPreplanRepository>(() => new PreplanRepository(DefaultConnection, null, DOConnection, null));
-            _turnosRepository = new Lazy<ITurnosRepository>(() => new TurnosRepository(DOConnection, null));
-            _talmaRepository = new Lazy<ITalmaRepository> (() => new TalmaRepository(DOConnection, null));
 
             //ADMIN
-            _adminRepository = new Lazy<IAdminRepository>(() => new AdminRepository(DefaultConnection, null));
+            _adminRepository = new Lazy<IAdminRepository>(() => new AdminRepository(DefaultConnection, null, null, null));
+
+            _geocercaRepository = new Lazy<IGeocercaRepository>(() => new GeocercaRepository(DefaultConnection, null));
+
         }
 
         private MySqlConnection DefaultConnection
@@ -117,69 +101,6 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
-        private MySqlConnection DOConnection
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-
-                if (_doConnection == null || _doConnection.State != ConnectionState.Open)
-                {
-                    lock (_lockObject)
-                    {
-                        if (_doConnection == null || _doConnection.State != ConnectionState.Open)
-                        {
-                            _doConnection = OpenConnectionWithRetry(
-                                _doConnectionString,
-                                "DO");
-                        }
-                    }
-                }
-                return _doConnection;
-            }
-        }
-
-        public ITurnosRepository TurnosRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _turnosRepository.Value;
-            }
-        }
-
-        public IPreplanRepository PreplanRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _preplanRepository.Value;
-            }
-        }
-
-        public IPasajerosRepository PasajerosRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _pasajeroRepository.Value;
-            }
-        }
-
-        public IGacelaRepository GacelaRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _gacelaRepository.Value;
-            }
-        }
-
         public IDatosCargainicialService DatosCargainicialService
         {
             get
@@ -220,26 +141,6 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
-        public IKmServicioRepository KmServicioRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _kmServicioRepository.Value;
-            }
-        }
-
-        public IRecorridoRepository RecorridoRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _recorridoRepository.Value;
-            }
-        }
-
         public IUserRepository UserRepository
         {
             get
@@ -250,16 +151,6 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
-        public ITalmaRepository TalmaRepository
-        {
-            get
-            {
-                if (_disposed)
-                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
-                return _talmaRepository.Value;
-            }
-        }
-
         public IAdminRepository AdminRepository
         {
             get
@@ -267,6 +158,16 @@ namespace VelsatBackendAPI.Data.Repositories
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
                 return _adminRepository.Value;
+            }
+        }
+
+        public IGeocercaRepository GeocercaRepository
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
+                return _geocercaRepository.Value;
             }
         }
 
@@ -381,17 +282,6 @@ namespace VelsatBackendAPI.Data.Repositories
                             $"[ReadOnlyUnitOfWork] Conexión SECOND {connectionId} cerrada");
                     }
 
-                    // ✅ Cerrar conexión DO
-                    if (_doConnection != null)
-                    {
-                        var connectionId = _doConnection.ServerThread;
-                        if (_doConnection.State == ConnectionState.Open)
-                            _doConnection.Close();
-                        _doConnection.Dispose();
-                        System.Diagnostics.Debug.WriteLine(
-                            $"[ReadOnlyUnitOfWork] Conexión DO {connectionId} cerrada");
-                    }
-
                     // Disponer servicios si fueron creados
                     if (_datosCargaInicialService.IsValueCreated &&
                         _datosCargaInicialService.Value is IDisposable disposable)
@@ -408,7 +298,6 @@ namespace VelsatBackendAPI.Data.Repositories
                 {
                     _defaultConnection = null;
                     _secondConnection = null;
-                    _doConnection = null;
                     _disposed = true;
                 }
             }

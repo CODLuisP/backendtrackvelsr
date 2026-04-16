@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace VelsatBackendAPI.Model.Administracion
 {
-    public class DeviceAdmin
+    public class ConexDevice
     {
         public string DeviceID { get; set; }
         public string AccountID { get; set; }
-        public string EquipmentType { get; set; }
-        public string UniqueID { get; set; }
+        public double LastValidSpeed { get; set; }
+        public int LastGPSTimestamp { get; set; }
         public string DeviceCode { get; set; }
-        public string SimPhoneNumber { get; set; }
         public string ImeiNumber { get; set; }
-        public string? IsActive { get; set; }
+        public string LastValidLatitude { get; set; }
+        public string LastValidLongitude { get; set; }
     }
 }

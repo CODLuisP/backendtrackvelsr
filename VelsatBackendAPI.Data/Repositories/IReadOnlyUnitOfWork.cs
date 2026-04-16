@@ -20,22 +20,11 @@ namespace VelsatBackendAPI.Data.Repositories
 
         IKilometrosRepository KilometrosRepository { get; }
 
-        IKmServicioRepository KmServicioRepository { get; }
-
-        IRecorridoRepository RecorridoRepository { get; } 
-
         IUserRepository UserRepository { get; }
 
-        IGacelaRepository GacelaRepository { get; }
-
-        IPasajerosRepository PasajerosRepository { get; }
-
-        IPreplanRepository PreplanRepository { get; }
-
-        ITurnosRepository TurnosRepository { get; }
-
-        ITalmaRepository TalmaRepository { get; }
-
         IAdminRepository AdminRepository { get; }
+
+        IGeocercaRepository GeocercaRepository { get; }
+
     }
 }

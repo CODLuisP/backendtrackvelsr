@@ -8,6 +8,7 @@ using VelsatBackendAPI.Controllers;
 using VelsatBackendAPI.Data.Repositories;
 using VelsatBackendAPI.Data.Services;
 using VelsatBackendAPI.Hubs;
+
 using MySqlConfiguration = VelsatBackendAPI.Data.MySqlConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,32 +39,35 @@ builder.Services.AddAuthentication(config =>
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
-});
 
+});
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var mysqlConfiguration = new MySqlConfiguration(
     builder.Configuration.GetConnectionString("DefaultConnection"),
     builder.Configuration.GetConnectionString("SecondConnection"),
-    builder.Configuration.GetConnectionString("DOConnection")
+    builder.Configuration.GetConnectionString("ThirdConnection")
 );
+
 builder.Services.AddSingleton(mysqlConfiguration);
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddScoped<IReadOnlyUnitOfWork, ReadOnlyUnitOfWork>();
+
 builder.Services.AddSingleton<IUnitOfWorkFactory, UnitOfWorkFactory>();
 
-// ✅ CORS configurado correctamente
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", builder =>
     {
         builder
-               .AllowAnyOrigin()      // ✅ Cambiado para Swagger
                .AllowAnyMethod()
-               .AllowAnyHeader();
-               // ❌ Quitamos AllowCredentials() cuando usamos AllowAnyOrigin()
+               .AllowAnyHeader()
+               .AllowCredentials()
+               .SetIsOriginAllowed(origin => true);
     });
 });
 
@@ -73,6 +77,19 @@ builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(1);
 });
+
+//Comentar SIGNALR temporal
+//builder.Services.AddSignalR(o =>
+//{
+//    o.EnableDetailedErrors = true;
+//});
+//
+
+//Descomentar para 107 - Env�o de correos
+
+builder.Services.AddHostedService<AlertaCorreoService>();
+
+//HASTA AC�
 
 var app = builder.Build();
 
@@ -93,14 +110,17 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// ✅ ORDEN CORRECTO: CORS debe ir ANTES de Authentication y Authorization
-app.UseCors("AllowSpecificOrigin");
-
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseCors("AllowSpecificOrigin");
 
 app.UseSession();
 
 app.MapControllers();
+
+//Comentar para SIGNALR
+//app.MapHub<ActualizacionTiempoReal>("/dataHubDevice/{username}");
+//
 
 app.Run();

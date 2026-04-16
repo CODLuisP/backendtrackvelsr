@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using VelsatBackendAPI.Model.MovilProgramacion;
 
 namespace VelsatBackendAPI.Model
 {
@@ -23,7 +22,6 @@ namespace VelsatBackendAPI.Model
         public string? Codgeoact { get; set; }
         public string? Rutaact { get; set; }
         public string? Servicio { get; set; }
-        public Servicio? UltimoServicio { get; set; }
         public Geocercausu? DatosGeocercausu { get; set; }
 
     }

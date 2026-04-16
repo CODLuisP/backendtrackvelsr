@@ -1,22 +1,27 @@
 ﻿using Dapper;
+using MySql.Data.MySqlClient;
 using System.Data;
+using System.Data.Common;
 using VelsatBackendAPI.Model.Administracion;
+using VelsatBackendAPI.Model.Documentacion;
 
 namespace VelsatBackendAPI.Data.Repositories
 {
     public class AdminRepository : IAdminRepository
     {
-        private readonly IDbConnection _defaultConnection; IDbTransaction _defaultTransaction;
+        private readonly IDbConnection _defaultConnection; IDbTransaction _defaultTransaction; IDbConnection _thridconnection; IDbTransaction _thridTransaction;
 
-        public AdminRepository(IDbConnection defaultconnection, IDbTransaction defaulttransaction)
+        public AdminRepository(IDbConnection defaultconnection, IDbTransaction defaulttransaction, IDbConnection thridconnection, IDbTransaction thridtransaction)
         {
             _defaultConnection = defaultconnection;
             _defaultTransaction = defaulttransaction;
+            _thridconnection = thridconnection;
+            _thridTransaction = thridtransaction;
         }
 
         public async Task<IEnumerable<Usuarioadmin>> GetAllUsers()
         {
-            var sql = @"SELECT accountID, password, contactPhone, contactEmail, description, creationTime, isActive, ruc from usuarios";
+            var sql = @"SELECT accountID, password, contactPhone, contactEmail, description, creationTime, isActive, ruc from usuarios WHERE isActive = 1";
 
             var resultado = await _defaultConnection.QueryAsync<Usuarioadmin>(sql, transaction: _defaultTransaction);
 
@@ -54,30 +59,30 @@ namespace VelsatBackendAPI.Data.Repositories
 
             // 1. Insertar usuario
             var sqlUsuario = @"INSERT INTO usuarios 
-                (accountID, password, contactPhone, contactEmail, description, creationTime, isActive, ruc) 
+                (accountID, userID, password, contactPhone, contactEmail, description, creationTime, isActive, ruc) 
                 VALUES 
-                (@AccountID, @Password, @ContactPhone, @ContactEmail, @Description, @CreationTime, @IsActive, @Ruc)";
+                (@AccountID, 'admin', @Password, @ContactPhone, @ContactEmail, @Description, @CreationTime, @IsActive, @Ruc)";
 
             var resultado = await _defaultConnection.ExecuteAsync(sqlUsuario, usuario, transaction: _defaultTransaction);
 
             // 2. Insertar en serverprueba
             var sqlServerPrueba = @"INSERT INTO serverprueba (loginusu, servidor, tipo) 
-                            VALUES (@AccountID, 'https://do.velsat.pe:2083', 'n')";
+                            VALUES (@AccountID, 'https://sub.velsat.pe:2096', 'n')";
 
-            await _defaultConnection.ExecuteAsync(sqlServerPrueba, new { AccountID = usuario.AccountID }, transaction: _defaultTransaction);
+            await _thridconnection.ExecuteAsync(sqlServerPrueba, new { AccountID = usuario.AccountID }, transaction: _thridTransaction);
 
             // 3. Insertar en servermobile
             var sqlServerMobile = @"INSERT INTO servermobile (loginusu, servidor, tipo) 
-                            VALUES (@AccountID, 'https://velsat.pe:2087', 'n')";
+                            VALUES (@AccountID, 'https://sub.velsat.pe:2087', 'n')";
 
-            await _defaultConnection.ExecuteAsync(sqlServerMobile, new { AccountID = usuario.AccountID }, transaction: _defaultTransaction);
+            await _thridconnection.ExecuteAsync(sqlServerMobile, new { AccountID = usuario.AccountID }, transaction: _thridTransaction);
 
             return resultado;
         }
 
         public async Task<IEnumerable<Deviceuser>> GetSubUsers()
         {
-            var sql = @"SELECT id, UserId, DeviceName, Status, DeviceID from deviceuser";
+            var sql = @"SELECT id, UserId, DeviceName, Status, DeviceID from deviceuser WHERE status = '1'";
 
             var resultado = await _defaultConnection.QueryAsync<Deviceuser>(sql, transaction: _defaultTransaction);
 
@@ -112,7 +117,7 @@ namespace VelsatBackendAPI.Data.Repositories
 
         public async Task<IEnumerable<DeviceAdmin>> GetDevices()
         {
-            var sql = @"SELECT deviceID, accountID, equipmentType, uniqueID, deviceCode, simPhoneNumber, imeiNumber, habilitada from device order by accountID";
+            var sql = @"SELECT deviceID, accountID, equipmentType, uniqueID, deviceCode, simPhoneNumber, imeiNumber, isActive from device order by accountID";
 
             var resultado = await _defaultConnection.QueryAsync<DeviceAdmin>(sql, transaction: _defaultTransaction);
 
@@ -141,11 +146,124 @@ namespace VelsatBackendAPI.Data.Repositories
 
         public async Task<int> InsertDevice(DeviceAdmin device)
         {
-            var sql = @"INSERT INTO device (deviceID, accountID, equipmentType, uniqueID, deviceCode, simPhoneNumber, imeiNumber, habilitada) 
+            var sql = @"INSERT INTO device (deviceID, accountID, equipmentType, uniqueID, deviceCode, simPhoneNumber, imeiNumber, isActive) 
                 VALUES (@DeviceID, @AccountID, @EquipmentType, @UniqueID, @DeviceCode, @SimPhoneNumber, @ImeiNumber, '1')";
 
             var resultado = await _defaultConnection.ExecuteAsync(sql, device, transaction: _defaultTransaction);
             return resultado;
+        }
+
+        public async Task<IEnumerable<ConexDevice>> GetConexDesconex()
+        {
+            var sql = @"SELECT deviceID, accountID, lastValidSpeed, lastGPSTimestamp, deviceCode, imeiNumber, lastValidLatitude, lastValidLongitude FROM device ORDER BY accountID";
+
+            var resultado = await _defaultConnection.QueryAsync<ConexDevice>(sql, transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<int> DeleteDevice(string deviceID, string accountID)
+        {
+            var sql = @"DELETE FROM device WHERE deviceID = @DeviceID AND accountID = @AccountID";
+
+            var resultado = await _defaultConnection.ExecuteAsync(sql,
+                new { DeviceID = deviceID, AccountID = accountID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        //----------------------------------UNIDAD--------------------------------------------------//
+        public async Task<List<Documento>> GetDocumento(string accountID)
+        {
+            const string sql = @"SELECT * FROM documentos WHERE AccountID = @AccountID ORDER BY Fecha_vencimiento DESC";
+            try
+            {
+                var documentos = await _defaultConnection.QueryAsync<Documento>(sql, new { AccountID = accountID }, transaction: _defaultTransaction);
+                return documentos.ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al obtener documentos de AccountID");
+                throw;
+            }
+        }
+
+        public async Task<int> CreateDocumento(Documento documento)
+        {
+            const string sql = @"INSERT INTO documentos (accountID, deviceID, nombre_documento, tipo_documento, archivo_url, fecha_vencimiento, observaciones) 
+                                VALUES (@AccountID, @DeviceID, @Nombre_documento, @Tipo_documento, @Archivo_url, @Fecha_vencimiento, @Observaciones); SELECT LAST_INSERT_ID();";
+            try
+            {
+                var id = await _defaultConnection.ExecuteScalarAsync<int>(sql, new
+                {
+                    documento.AccountID,
+                    documento.DeviceID,
+                    documento.Nombre_documento,
+                    documento.Tipo_documento,
+                    documento.Archivo_url,
+                    documento.Fecha_vencimiento,
+                    documento.Observaciones,
+                }, transaction: _defaultTransaction);
+                return id;
+            }
+            catch (MySqlException ex) when (ex.Number == 1062)
+            {
+                Console.WriteLine("Error de duplicado al insertar en docunidad");
+                throw new Exception("El documento de unidad ya existe en el sistema", ex);
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine("Error de MySQL al insertar en docunidad");
+                throw new Exception($"Error de base de datos MySQL: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al crear documento de unidad");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteDocumento(int id)
+        {
+            const string sql = @"DELETE FROM documentos WHERE Id = @Id";
+            try
+            {
+                var affectedRows = await _defaultConnection.ExecuteAsync(sql, new { Id = id }, transaction: _defaultTransaction);
+                return affectedRows > 0;
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine("Error de MySQL al eliminar en documentos");
+                throw new Exception($"Error de base de datos MySQL: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al eliminar documentos");
+                throw;
+            }
+        }
+
+        public async Task<List<Documento>> DocumentosPorVencer(string accountID)
+        {
+            var fechaActual = DateTime.UtcNow.AddHours(-5).Date;
+            var fechaLimite = fechaActual.AddDays(30);
+
+            const string sql = @"SELECT * FROM documentos WHERE Fecha_vencimiento IS NOT NULL AND Fecha_vencimiento <= @FechaLimite AND accountID = @AccountID ORDER BY Fecha_vencimiento ASC";
+            try
+            {
+                var documentos = await _defaultConnection.QueryAsync<Documento>(sql, new
+                {
+                    FechaLimite = fechaLimite,
+                    AccountID = accountID
+                }, transaction: _defaultTransaction);
+                return documentos.ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al obtener documentos próximos a vencer");
+                return new List<Documento>();
+            }
         }
     }
 }

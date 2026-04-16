@@ -10,7 +10,7 @@ namespace VelsatBackendAPI.Data.Repositories
     {
         private readonly string _defaultConnectionString;
         private readonly string _secondConnectionString;
-        private readonly string _doConnectionString;
+        private readonly string _thridConnectionString;
 
         private MySqlConnection _defaultConnection;
         private MySqlTransaction _defaultTransaction;
@@ -18,8 +18,9 @@ namespace VelsatBackendAPI.Data.Repositories
         private MySqlConnection _secondConnection;
         private MySqlTransaction _secondTransaction;
 
-        private MySqlConnection _doConnection;
-        private MySqlTransaction _doTransaction;
+        private MySqlConnection _thirdConnection;
+        private MySqlTransaction _thirdTransaction;
+
 
         // ✅ Usar Lazy<T> para thread-safety sin locks manuales
         private readonly Lazy<IUserRepository> _userRepository;
@@ -27,15 +28,9 @@ namespace VelsatBackendAPI.Data.Repositories
         private readonly Lazy<IHistoricosRepository> _historicosRepository;
         private readonly Lazy<IKilometrosRepository> _kilometrosRepository;
         private readonly Lazy<IServidorRepository> _servidorRepository;
-        private readonly Lazy<ITurnosRepository> _turnosRepository;
-        private readonly Lazy<IPasajerosRepository> _pasajerosRepository;
-        private readonly Lazy<IPreplanRepository> _preplanRepository;
         private readonly Lazy<IAlertaRepository> _alertaRepository;
-        private readonly Lazy<IRecorridoRepository> _recorridoRepository;
-        private readonly Lazy<IKmServicioRepository> _kmServicioRepository;
-        private readonly Lazy<IGacelaRepository> _gacelaRepository;
-        private readonly Lazy<ITalmaRepository> _talmaRepository;
         private readonly Lazy<IAdminRepository> _adminRepository;
+        private readonly Lazy<IGeocercaRepository> _geocercaRepository;
 
         private bool _disposed = false;
         private bool _committed = false;
@@ -47,9 +42,9 @@ namespace VelsatBackendAPI.Data.Repositories
                 ?? throw new ArgumentNullException(nameof(configuration.DefaultConnection));
             _secondConnectionString = configuration.SecondConnection
                 ?? throw new ArgumentNullException(nameof(configuration.SecondConnection));
-            _doConnectionString = configuration.DOConnection
-            ?? throw new ArgumentNullException(nameof(configuration.DOConnection));
 
+            _thridConnectionString = configuration.ThirdConnection
+        ?? throw new ArgumentNullException(nameof(configuration.ThirdConnection));
 
             // ✅ Inicializar Lazy para cada repositorio
             _userRepository = new Lazy<IUserRepository>(() =>
@@ -61,24 +56,8 @@ namespace VelsatBackendAPI.Data.Repositories
             _servidorRepository = new Lazy<IServidorRepository>(() =>
                 new ServidorRepository(DefaultConnection, _defaultTransaction));
 
-            _turnosRepository = new Lazy<ITurnosRepository>(() =>
-                new TurnosRepository(DOConnection, _doTransaction));
-
-            _pasajerosRepository = new Lazy<IPasajerosRepository>(() =>
-                new PasajerosRepository(DefaultConnection, _defaultTransaction, DOConnection, _doTransaction));
-
-            _preplanRepository = new Lazy<IPreplanRepository>(() =>
-                new PreplanRepository(DefaultConnection, _defaultTransaction, DOConnection, _doTransaction));
-
             _alertaRepository = new Lazy<IAlertaRepository>(() =>
                 new AlertaRepository(DefaultConnection, _defaultTransaction));
-
-            _recorridoRepository = new Lazy<IRecorridoRepository>(() => new RecorridoRepository(DOConnection, _doTransaction));
-
-            _gacelaRepository = new Lazy<IGacelaRepository>(() =>
-                new GacelaRepository(DefaultConnection, _defaultTransaction, DOConnection, _doTransaction));
-
-            _talmaRepository = new Lazy<ITalmaRepository>(() => new TalmaRepository(DOConnection, _doTransaction));
 
             // Repositorios con ambas conexiones
             _historicosRepository = new Lazy<IHistoricosRepository>(() =>
@@ -87,11 +66,10 @@ namespace VelsatBackendAPI.Data.Repositories
             _kilometrosRepository = new Lazy<IKilometrosRepository>(() =>
                 new KilometrosRepository(DefaultConnection, SecondConnection, _defaultTransaction, _secondTransaction));
 
-            _kmServicioRepository = new Lazy<IKmServicioRepository>(() =>
-                new KmServicioRepository(DefaultConnection, SecondConnection, _defaultTransaction, _secondTransaction, DOConnection, _doTransaction));
-
             //ADMIN
-            _adminRepository = new Lazy<IAdminRepository>(() => new AdminRepository(DefaultConnection, _defaultTransaction));
+            _adminRepository = new Lazy<IAdminRepository>(() => new AdminRepository(DefaultConnection, _defaultTransaction, ThirdConnection, _thirdTransaction));
+
+            _geocercaRepository = new Lazy<IGeocercaRepository>(() => new GeocercaRepository(DefaultConnection, _defaultTransaction));
         }
 
         // ✅ Conexión principal con inicialización thread-safe y retry logic
@@ -154,32 +132,32 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
-        // ✅ NUEVA: Propiedad para conexión DO
-        private MySqlConnection DOConnection
+        private MySqlConnection ThirdConnection
         {
             get
             {
                 ValidateNotDisposedOrCommitted();
 
-                if (_doConnection == null)
+                if (_thirdConnection == null)
                 {
                     lock (_lockObject)
                     {
-                        if (_doConnection == null)
+                        if (_thirdConnection == null)
                         {
-                            _doConnection = OpenConnectionWithRetry(
-                                _doConnectionString,
-                                "DO (con transacción)");
+                            // ✅ CAMBIO: Usar método con retry
+                            _thirdConnection = OpenConnectionWithRetry(
+                                _thridConnectionString,
+                                "THIRD (con transacción)");
 
-                            // ✅ Iniciar transacción en DO
-                            _doTransaction = _doConnection.BeginTransaction();
+                            // Iniciar transacción DESPUÉS de abrir la conexión exitosamente
+                            _thirdTransaction = _thirdConnection.BeginTransaction();
 
                             System.Diagnostics.Debug.WriteLine(
-                                $"[UnitOfWork] Transacción DO iniciada");
+                                $"[UnitOfWork] Transacción THIRD iniciada");
                         }
                     }
                 }
-                return _doConnection;
+                return _thirdConnection;
             }
         }
 
@@ -302,66 +280,12 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
-        public ITurnosRepository TurnosRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _turnosRepository.Value;
-            }
-        }
-
-        public IPasajerosRepository PasajerosRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _pasajerosRepository.Value;
-            }
-        }
-
-        public IPreplanRepository PreplanRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _preplanRepository.Value;
-            }
-        }
-
         public IAlertaRepository AlertaRepository
         {
             get
             {
                 ValidateNotDisposedOrCommitted();
                 return _alertaRepository.Value;
-            }
-        }
-
-        public IRecorridoRepository RecorridoRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _recorridoRepository.Value;
-            }
-        }
-
-        public ITalmaRepository TalmaRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _talmaRepository.Value;
-            }
-        }
-
-        public IGacelaRepository GacelaRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _gacelaRepository.Value;
             }
         }
 
@@ -383,21 +307,21 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
-        public IKmServicioRepository KmServicioRepository
-        {
-            get
-            {
-                ValidateNotDisposedOrCommitted();
-                return _kmServicioRepository.Value;
-            }
-        }
-
         public IAdminRepository AdminRepository
         {
             get
             {
                 ValidateNotDisposedOrCommitted();
                 return _adminRepository.Value;
+            }
+        }
+
+        public IGeocercaRepository GeocercaRepository
+        {
+            get
+            {
+                ValidateNotDisposedOrCommitted();
+                return _geocercaRepository.Value;
             }
         }
 
@@ -413,7 +337,7 @@ namespace VelsatBackendAPI.Data.Repositories
                     // ✅ Commit de las 3 transacciones
                     _defaultTransaction?.Commit();
                     _secondTransaction?.Commit();
-                    _doTransaction?.Commit(); // ✅ NUEVA
+                    _thirdTransaction?.Commit();
 
                     _committed = true;
 
@@ -428,7 +352,7 @@ namespace VelsatBackendAPI.Data.Repositories
                     // ✅ Rollback de las 3 transacciones en caso de error
                     try { _defaultTransaction?.Rollback(); } catch { }
                     try { _secondTransaction?.Rollback(); } catch { }
-                    try { _doTransaction?.Rollback(); } catch { } // ✅ NUEVA
+                    try { _thirdTransaction?.Rollback(); } catch { }
 
                     throw;
                 }
@@ -455,10 +379,11 @@ namespace VelsatBackendAPI.Data.Repositories
                 _secondTransaction = null;
             }
 
-            if (_doTransaction != null) // ✅ NUEVA
+            // ✅ AGREGAR ESTE BLOQUE
+            if (_thirdTransaction != null)
             {
-                _doTransaction.Dispose();
-                _doTransaction = null;
+                _thirdTransaction.Dispose();
+                _thirdTransaction = null;
             }
 
             // Cerrar y disponer conexiones
@@ -486,16 +411,17 @@ namespace VelsatBackendAPI.Data.Repositories
                 finally { _secondConnection = null; }
             }
 
-            if (_doConnection != null) // ✅ NUEVA
+            // ✅ AGREGAR ESTE BLOQUE
+            if (_thirdConnection != null)
             {
                 try
                 {
-                    if (_doConnection.State == ConnectionState.Open)
-                        _doConnection.Close();
-                    _doConnection.Dispose();
+                    if (_thirdConnection.State == ConnectionState.Open)
+                        _thirdConnection.Close();
+                    _thirdConnection.Dispose();
                 }
                 catch { }
-                finally { _doConnection = null; }
+                finally { _thirdConnection = null; }
             }
         }
 
@@ -539,16 +465,6 @@ namespace VelsatBackendAPI.Data.Repositories
                             {
                                 System.Diagnostics.Debug.WriteLine($"[UnitOfWork] Rollback second error: {ex.Message}");
                             }
-
-                            try // ✅ NUEVA
-                            {
-                                if (_doTransaction != null && _doTransaction.Connection != null)
-                                    _doTransaction.Rollback();
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[UnitOfWork] Rollback DO error: {ex.Message}");
-                            }
                         }
 
                         DisposeTransactionsAndConnections();
@@ -575,14 +491,9 @@ namespace VelsatBackendAPI.Data.Repositories
             TryDisposeRepository(_historicosRepository);
             TryDisposeRepository(_kilometrosRepository);
             TryDisposeRepository(_servidorRepository);
-            TryDisposeRepository(_turnosRepository);
-            TryDisposeRepository(_pasajerosRepository);
-            TryDisposeRepository(_preplanRepository);
             TryDisposeRepository(_alertaRepository);
-            TryDisposeRepository(_recorridoRepository);
-            TryDisposeRepository(_kmServicioRepository);
-            TryDisposeRepository(_gacelaRepository);
             TryDisposeRepository(_adminRepository);
+            TryDisposeRepository(_geocercaRepository);
         }
 
         private void TryDisposeRepository<T>(Lazy<T> lazyRepo)

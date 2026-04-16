@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VelsatBackendAPI.Data.Repositories;
 using VelsatBackendAPI.Model.Administracion;
+using VelsatBackendAPI.Model.Documentacion;
 
 namespace VelsatBackendAPI.Controllers
 {
@@ -231,12 +232,14 @@ namespace VelsatBackendAPI.Controllers
         {
             try
             {
-                var resultado = await _readOnlyUow.AdminRepository.UpdateDevice(device, oldDeviceID, oldAccountID);
+                var resultado = await _uow.AdminRepository.UpdateDevice(device, oldDeviceID, oldAccountID);
 
                 if (resultado == 0)
                 {
                     return NotFound(new { message = "Dispositivo no encontrado" });
                 }
+
+                _uow.SaveChanges();
 
                 return Ok(new { message = "Dispositivo actualizado correctamente", rowsAffected = resultado });
             }
@@ -251,12 +254,14 @@ namespace VelsatBackendAPI.Controllers
         {
             try
             {
-                var resultado = await _readOnlyUow.AdminRepository.InsertDevice(device);
+                var resultado = await _uow.AdminRepository.InsertDevice(device);
 
                 if (resultado == 0)
                 {
                     return BadRequest(new { message = "No se pudo crear el dispositivo" });
                 }
+
+                _uow.SaveChanges();
 
                 return Ok(new { message = "Dispositivo creado correctamente", rowsAffected = resultado });
             }
@@ -265,5 +270,203 @@ namespace VelsatBackendAPI.Controllers
                 return StatusCode(500, new { message = "Error al crear el dispositivo", error = ex.Message });
             }
         }
+
+        [HttpDelete("DeleteDevice/{deviceID}/{accountID}")]
+        public async Task<IActionResult> DeleteDevice(string deviceID, string accountID)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(deviceID) || string.IsNullOrEmpty(accountID))
+                {
+                    return BadRequest(new { message = "El deviceID y accountID no pueden ser nulos o vacíos" });
+                }
+
+                var rowsAffected = await _uow.AdminRepository.DeleteDevice(deviceID, accountID);
+
+                if (rowsAffected == 0)
+                {
+                    return NotFound(new { message = "Dispositivo no encontrado" });
+                }
+
+                _uow.SaveChanges();
+
+                return Ok(new { message = "Dispositivo eliminado correctamente", deviceID, accountID });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al eliminar el dispositivo", error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetDevicesConex")]
+        public async Task<IActionResult> GetConexDesconex()
+        {
+            try
+            {
+                var devices = await _readOnlyUow.AdminRepository.GetConexDesconex();
+                return Ok(devices);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener las unidades", error = ex.Message });
+            }
+        }
+
+        //DOCUMENTACIÓN
+        //----------------------------------UNIDAD--------------------------------------------------//
+
+        [HttpGet("GetDocumento")]
+        public async Task<IActionResult> GetDocumento([FromQuery] string accountID)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(accountID))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "El AccountID es requerido"
+                    });
+                }
+
+                var documentos = await _readOnlyUow.AdminRepository.GetDocumento(accountID);
+
+                if (documentos == null || !documentos.Any())
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = $"No se encontraron documentos para la cuenta {accountID}"
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    data = documentos,
+                    count = documentos.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error interno del servidor",
+                    error = ex.Message
+                });
+            }
+        }
+
+        [HttpPost("CreateDocumento")]
+        public async Task<IActionResult> CreateDocumento([FromBody] Documento documento)
+        {
+            try
+            {
+                if (documento == null)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Los datos del documento son requeridos"
+                    });
+                }
+
+                var id = await _uow.AdminRepository.CreateDocumento(documento);
+                _uow.SaveChanges();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Documento creado exitosamente",
+                    id = id
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error interno del servidor",
+                    error = ex.Message
+                });
+            }
+        }
+
+        [HttpDelete("DeleteDocumento")]
+        public async Task<IActionResult> DeleteUnidad([FromQuery] int id)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "ID inválido"
+                    });
+                }
+
+                var resultado = await _uow.AdminRepository.DeleteDocumento(id);
+                _uow.SaveChanges();
+
+                if (!resultado)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = $"No se encontró el documento con ID {id}"
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Documento eliminado exitosamente"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error interno del servidor",
+                    error = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("DocumentosPorVencer")]
+        public async Task<IActionResult> DocumentosPorVencer([FromQuery] string accountID)
+        {
+            try
+            {
+                var documentos = await _readOnlyUow.AdminRepository.DocumentosPorVencer(accountID);
+
+                if (documentos == null || !documentos.Any())
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "No se encontraron documentos próximos a vencer"
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    data = documentos
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error interno del servidor",
+                    error = ex.Message
+                });
+            }
+        }       
     }
 }

@@ -5,7 +5,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using VelsatBackendAPI.Model;
-using VelsatBackendAPI.Model.MovilProgramacion;
 
 namespace VelsatBackendAPI.Data.Services
 {
@@ -89,9 +88,7 @@ namespace VelsatBackendAPI.Data.Services
             }
 
             const string sqlGetDevices = @"
-                SELECT deviceID, lastGPSTimestamp, lastValidLatitude, lastValidLongitude, lastOdometerKM, 
-                       odometerini, kmini, description, direccion, codgeoact, 
-                       lastValidHeading, lastValidSpeed, rutaact, servicio 
+                SELECT deviceID, lastValidLatitude, lastValidLongitude, lastOdometerKM, description, direccion, lastValidHeading, lastValidSpeed 
                 FROM device 
                 WHERE deviceID IN @DeviceIDs";
 
@@ -102,52 +99,10 @@ namespace VelsatBackendAPI.Data.Services
 
             var devices = devicesResult.ToList();
 
-            var serviceCodes = devices
-                .Where(d => !string.IsNullOrEmpty(d.Servicio))
-                .Select(d => d.Servicio)
-                .Distinct()
-                .ToList();
-
-            Dictionary<string, Servicio> serviciosDict = new Dictionary<string, Servicio>();
-
-            if (serviceCodes.Any())
-            {
-                const string sqlGetServicios = @"
-                    SELECT s.fecha, t.apellidos, s.numero, s.tipo, s.unidad, 
-                           s.codservicio, s.empresa 
-                    FROM servicio s, taxi t 
-                    WHERE s.codconductor = t.codtaxi 
-                      AND s.codservicio IN @Servicios";
-
-                var serviciosData = await _defaultConnection.QueryAsync(
-                    sqlGetServicios,
-                    new { Servicios = serviceCodes },
-                    transaction: _defaultTransaction); // ⭐ Ya tenía la transacción ✅
-
-                var servicios = serviciosData.Select(row => new Servicio
-                {
-                    Codservicio = row.codservicio.ToString(),
-                    Fecha = row.fecha,
-                    Numero = row.numero,
-                    Tipo = row.tipo,
-                    Empresa = row.empresa,
-                    Conductor = new Usuario { Apepate = row.apellidos },
-                    Unidad = new Unidad { Codunidad = row.unidad }
-                });
-
-                serviciosDict = servicios.ToDictionary(s => s.Codservicio, s => s);
-            }
-
-            // ⭐ CORREGIDO: Ahora usa await para cada llamada async
+            // ⭐ Asignar geocercas a cada dispositivo
             foreach (var device in devices)
             {
                 device.DatosGeocercausu = await ObtenerGeocercausuPorCodigoAsync(device.Codgeoact); // ⭐ Async
-
-                if (!string.IsNullOrEmpty(device.Servicio) &&
-                    serviciosDict.ContainsKey(device.Servicio))
-                {
-                    device.UltimoServicio = serviciosDict[device.Servicio];
-                }
             }
 
             return new DatosCargainicial
@@ -168,7 +123,8 @@ namespace VelsatBackendAPI.Data.Services
             }
 
             const string sqlGetSimplifiedDevices = @"
-                SELECT DISTINCT d.deviceID, d.rutaact, d.lastValidSpeed, d.lastValidLatitude, d.lastValidLongitude 
+                SELECT DISTINCT d.deviceID, d.lastValidSpeed, 
+                       d.lastValidLatitude, d.lastValidLongitude 
                 FROM device d 
                 WHERE d.deviceID IN @DeviceIds";
 
@@ -193,7 +149,7 @@ namespace VelsatBackendAPI.Data.Services
                 };
             }
 
-            const string sqlGetVehicle = @"SELECT deviceID, lastValidLatitude, lastValidLongitude, lastOdometerKM, odometerini, kmini, description, direccion, codgeoact, lastValidHeading, lastValidSpeed, rutaact, servicio FROM device WHERE deviceID IN @DeviceIDs AND deviceID = @Placa";
+            const string sqlGetVehicle = @"SELECT deviceID, lastValidLatitude, lastValidLongitude, lastOdometerKM, description, direccion, codgeoact, lastValidHeading, lastValidSpeed FROM device WHERE deviceID IN @DeviceIDs AND deviceID = @Placa";
 
             var vehiculos = await _defaultConnection.QueryAsync<Device>(
                 sqlGetVehicle,

@@ -1,13 +1,16 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Utilities.Net;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using VelsatBackendAPI.Model;
-using VelsatBackendAPI.Model.MovilProgramacion;
 
 namespace VelsatBackendAPI.Data.Repositories
 {
@@ -16,18 +19,14 @@ namespace VelsatBackendAPI.Data.Repositories
         private readonly IDbConnection _defaultConnection;
         private readonly IDbConnection _secondConnection;
         private readonly IDbTransaction _defaultTransaction;
-        private readonly IDbTransaction _secondTransaction; // ✅ AGREGAR
+        private readonly IDbTransaction _secondTransaction;
 
-        public HistoricosRepository(
-            IDbConnection defaultConnection,
-            IDbConnection secondConnection,
-            IDbTransaction defaultTransaction,
-            IDbTransaction secondTransaction) // ✅ AGREGAR parámetro
+        public HistoricosRepository(IDbConnection defaultConnection, IDbConnection secondConnection, IDbTransaction defaulttransaction, IDbTransaction secondTransaction)
         {
             _defaultConnection = defaultConnection;
             _secondConnection = secondConnection;
-            _defaultTransaction = defaultTransaction;
-            _secondTransaction = secondTransaction; // ✅ ASIGNAR
+            _defaultTransaction = defaulttransaction;
+            _secondTransaction = secondTransaction;
         }
 
         public async Task<DatosReporting> GetDataReporting(string fechaini, string fechafin, string deviceID, string accountID)
@@ -141,6 +140,7 @@ namespace VelsatBackendAPI.Data.Repositories
             }
         }
 
+
         public int DateUnix(string fecha)
         {
             fecha = WebUtility.UrlDecode(fecha);
@@ -217,7 +217,7 @@ namespace VelsatBackendAPI.Data.Repositories
 
                 for (int i = 0; i < datosreporte.ListaTablas.Count - 1; i++)
                 {
-                    if (datosreporte.ListaTablas[i].SpeedKPH == 0 && datosreporte.ListaTablas[i + 1].SpeedKPH == 0)
+                    if (datosreporte.ListaTablas[i].SpeedKPH >= 0 && datosreporte.ListaTablas[i].SpeedKPH < 1 && datosreporte.ListaTablas[i + 1].SpeedKPH >= 0)
                     {
                         Contador++;
 
@@ -395,7 +395,7 @@ namespace VelsatBackendAPI.Data.Repositories
 
             string account = _defaultConnection.QueryFirstOrDefault<string>(sql, new { DeviceID = deviceID }, transaction: _defaultTransaction);
 
-            const string sqlUser = "Select description from usuarios where accountID = @AccountId";
+            const string sqlUser = "Select description from account where accountID = @AccountId";
 
             string userName = _defaultConnection.QueryFirstOrDefault<string>(sqlUser, new { AccountId = account }, transaction: _defaultTransaction);
 

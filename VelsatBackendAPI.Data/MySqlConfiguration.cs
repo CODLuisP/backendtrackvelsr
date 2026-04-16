@@ -5,7 +5,7 @@ namespace VelsatBackendAPI.Data
 {
     public class MySqlConfiguration
     {
-        public MySqlConfiguration(string defaultConnection, string secondConnection, string doConnection)
+        public MySqlConfiguration(string defaultConnection, string secondConnection, string thirdConnection)
         {
             // ✅ Validar que no sean nulas o vacías
             if (string.IsNullOrWhiteSpace(defaultConnection))
@@ -16,19 +16,19 @@ namespace VelsatBackendAPI.Data
                 throw new ArgumentNullException(nameof(secondConnection),
                     "La cadena de conexión secundaria no puede estar vacía");
 
-            if (string.IsNullOrWhiteSpace(doConnection))
-                throw new ArgumentNullException(nameof(doConnection),
-                    "La cadena de conexión DO no puede estar vacía");
+            if (string.IsNullOrWhiteSpace(thirdConnection))
+                throw new ArgumentNullException(nameof(thirdConnection),
+                    "La cadena de conexión terciaria no puede estar vacía");
 
             // ✅ NORMALIZAR las connection strings para evitar duplicados en el pool
             DefaultConnection = NormalizeConnectionString(defaultConnection);
             SecondConnection = NormalizeConnectionString(secondConnection);
-            DOConnection = NormalizeConnectionString(doConnection);
+            ThirdConnection = NormalizeConnectionString(thirdConnection);
         }
 
         public string DefaultConnection { get; set; }
         public string SecondConnection { get; set; }
-        public string DOConnection { get; set; }
+        public string ThirdConnection { get; set; }
 
         /// <summary>
         /// Normaliza una connection string para garantizar formato consistente.

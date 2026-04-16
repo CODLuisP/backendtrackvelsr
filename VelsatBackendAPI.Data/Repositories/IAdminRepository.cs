@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VelsatBackendAPI.Model.Administracion;
+using VelsatBackendAPI.Model.Documentacion;
 
 namespace VelsatBackendAPI.Data.Repositories
 {
@@ -31,5 +32,16 @@ namespace VelsatBackendAPI.Data.Repositories
 
         Task<int> InsertDevice(DeviceAdmin device);
 
+        Task<int> DeleteDevice(string deviceID, string accountID);
+
+        Task<IEnumerable<ConexDevice>> GetConexDesconex();
+
+
+        //DOCUMENTACIÓN
+        //----------------------------------UNIDAD--------------------------------------------------//
+        Task<List<Documento>> GetDocumento(string accountID);
+        Task<int> CreateDocumento(Documento documento);
+        Task<bool> DeleteDocumento(int id);
+        Task<List<Documento>> DocumentosPorVencer(string accountID);
     }
 }
