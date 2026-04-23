@@ -412,5 +412,96 @@ namespace VelsatBackendAPI.Data.Repositories
 
             return result.ToList();
         }
+
+        public async Task<List<EventsReporting>> GetDataEvents(string fechaini, string fechafin, string deviceID, string accountID)
+        {
+            var dates = FormatDate(fechaini, fechafin);
+            var calc = CalcularDias(dates.dateStart, dates.dateEnd);
+
+            if (calc.NumDias > 3)
+                return new List<EventsReporting>();
+
+            var lista = new List<EventsReporting>();
+
+            const string sqlHistoricos = "SELECT tabla FROM historicos WHERE timeini <= @FechafinUnix AND timefin >= @FechainiUnix";
+
+            var nombresTablas = _defaultConnection.Query<Historicos>(
+                sqlHistoricos,
+                new { FechainiUnix = calc.UnixFechaInicio, FechafinUnix = calc.UnixFechaFin },
+                transaction: _defaultTransaction).ToList();
+
+            if (nombresTablas.Count == 0)
+            {
+                const string sql = @"
+            SELECT 
+                accountID  AS AcccountID,
+                deviceID   AS DeviceId,
+                timestamp  AS Timestamp,
+                statusCode AS StatusCode,
+                latitude   AS Latitude,
+                longitude  AS Longitude,
+                address    AS Address
+            FROM eventdata
+            WHERE accountID  = @AccountID
+              AND deviceID   = @DeviceID
+              AND statusCode NOT IN (61715, 61714, 64789, 1789)
+              AND timestamp  BETWEEN @FechaIni AND @FechaFin
+            ORDER BY timestamp DESC";
+
+                var result = await _defaultConnection.QueryAsync<EventsReporting>(
+                    sql,
+                    new
+                    {
+                        AccountID = accountID,
+                        DeviceID = deviceID,
+                        FechaIni = calc.UnixFechaInicio,
+                        FechaFin = calc.UnixFechaFin
+                    },
+                    transaction: _defaultTransaction);
+
+                lista = result.ToList();
+            }
+            else
+            {
+                foreach (var nombreTabla in nombresTablas)
+                {
+                    string sqlR = $@"
+                SELECT 
+                    accountID  AS AcccountID,
+                    deviceID   AS DeviceId,
+                    timestamp  AS Timestamp,
+                    statusCode AS StatusCode,
+                    latitude   AS Latitude,
+                    longitude  AS Longitude,
+                    address    AS Address
+                FROM {nombreTabla.Tabla}
+                WHERE accountID  = @AccountID
+                  AND deviceID   = @DeviceID
+                  AND statusCode NOT IN (61715, 61714, 64789, 1789)
+                  AND timestamp  BETWEEN @FechaIni AND @FechaFin
+                ORDER BY timestamp DESC";
+
+                    var datosTabla = _secondConnection.Query<EventsReporting>(
+                        sqlR,
+                        new
+                        {
+                            AccountID = accountID,
+                            DeviceID = deviceID,
+                            FechaIni = calc.UnixFechaInicio,
+                            FechaFin = calc.UnixFechaFin
+                        },
+                        transaction: _secondTransaction).ToList();
+
+                    lista.AddRange(datosTabla);
+                }
+
+                lista = lista.OrderByDescending(x => x.Timestamp).ToList();
+            }
+
+            for (int i = 0; i < lista.Count; i++)
+                lista[i].Item = i + 1;
+
+            return lista;
+        }
     }
 }

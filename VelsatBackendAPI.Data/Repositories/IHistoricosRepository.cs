@@ -20,5 +20,8 @@ namespace VelsatBackendAPI.Data.Repositories
         string UserName(string deviceID);
 
         Task<List<string>> DeviceFilterSedapal(string rutadefault);
+
+        Task<List<EventsReporting>> GetDataEvents(string fechaini, string fechafin, string deviceID, string accountID);
+
     }
 }
