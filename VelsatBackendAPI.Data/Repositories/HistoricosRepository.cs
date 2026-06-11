@@ -391,11 +391,11 @@ namespace VelsatBackendAPI.Data.Repositories
 
         public string UserName(string deviceID)
         {
-            const string sql = "select accountID from device where deviceID = @DeviceID";
+            const string sql = "select accountID from gts.device where deviceID = @DeviceID";
 
             string account = _defaultConnection.QueryFirstOrDefault<string>(sql, new { DeviceID = deviceID }, transaction: _defaultTransaction);
 
-            const string sqlUser = "Select description from account where accountID = @AccountId";
+            const string sqlUser = "Select description from gts.usuarios where accountID = @AccountId";
 
             string userName = _defaultConnection.QueryFirstOrDefault<string>(sqlUser, new { AccountId = account }, transaction: _defaultTransaction);
 
