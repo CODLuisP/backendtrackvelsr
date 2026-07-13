@@ -175,14 +175,14 @@ namespace VelsatBackendAPI.Data.Repositories
 
         public async Task<IEnumerable<DeviceAuditoria>> GetUnidadesGoldcar()
         {
-            var sql = @"SELECT accountID, deviceID FROM device WHERE godlcar = '1'";
+            var sql = @"SELECT accountID, deviceID FROM device WHERE goldcar = '1'";
 
             var resultado = await _defaultConnection.QueryAsync<DeviceAuditoria>(sql, transaction: _defaultTransaction);
 
             return resultado;
         }
 
-        public async Task<int> HabilitarGoldcarn(string accountID, string deviceID, char valor)
+        public async Task<int> HabilitarGoldcar(string accountID, string deviceID, char valor)
         {
             var sql = @"UPDATE device SET goldcar = @Valor WHERE accountID = @AccountID AND deviceID = @DeviceID";
 
