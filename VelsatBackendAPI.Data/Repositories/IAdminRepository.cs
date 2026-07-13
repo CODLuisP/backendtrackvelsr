@@ -36,6 +36,12 @@ namespace VelsatBackendAPI.Data.Repositories
 
         Task<IEnumerable<ConexDevice>> GetConexDesconex();
 
+        Task<IEnumerable<Auditoria>> GetUltimosRegistrosAuditoriaGoldcar(string accountID, string deviceID);
+
+        Task<int> HabilitarGoldcar(string accountID, string deviceID, char valor);
+
+        Task<IEnumerable<DeviceAuditoria>> GetUnidadesGoldcar();
+
 
         //DOCUMENTACIÓN
         //----------------------------------UNIDAD--------------------------------------------------//

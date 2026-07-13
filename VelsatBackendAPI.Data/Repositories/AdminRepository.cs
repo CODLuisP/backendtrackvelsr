@@ -173,6 +173,41 @@ namespace VelsatBackendAPI.Data.Repositories
             return resultado;
         }
 
+        public async Task<IEnumerable<DeviceAuditoria>> GetUnidadesGoldcar()
+        {
+            var sql = @"SELECT accountID, deviceID FROM device WHERE godlcar = '1'";
+
+            var resultado = await _defaultConnection.QueryAsync<DeviceAuditoria>(sql, transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<int> HabilitarGoldcarn(string accountID, string deviceID, char valor)
+        {
+            var sql = @"UPDATE device SET goldcar = @Valor WHERE accountID = @AccountID AND deviceID = @DeviceID";
+
+            var resultado = await _defaultConnection.ExecuteAsync(sql,
+                new { Valor = valor, AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<IEnumerable<Auditoria>> GetUltimosRegistrosAuditoriaGoldcar(string accountID, string deviceID)
+        {
+            var sql = @"SELECT id, accountID, deviceID, fecharegistro, lastenvio, lastrespuesta
+                        FROM auditoriagoldcar
+                        WHERE accountID = @AccountID AND deviceID = @DeviceID
+                        ORDER BY fecharegistro DESC
+                        LIMIT 5";
+
+            var resultado = await _defaultConnection.QueryAsync<Auditoria>(sql,
+                new { AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
         //----------------------------------UNIDAD--------------------------------------------------//
         public async Task<List<Documento>> GetDocumento(string accountID)
         {
