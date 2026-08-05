@@ -27,7 +27,9 @@ namespace VelsatBackendAPI.Model
 
         public string Hora => TimeZoneInfo.ConvertTimeFromUtc(TimestampConvert, TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time")).ToString("HH:mm").ToUpper();
 
-        public int StatusCode { get; set; }
+        public string EventType { get; set; }
+
+        public string AlarmType { get; set; }
 
         public double Longitude { get; set; }
 

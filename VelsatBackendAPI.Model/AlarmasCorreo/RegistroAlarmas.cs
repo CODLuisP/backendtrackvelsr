@@ -12,10 +12,10 @@ namespace VelsatBackendAPI.Model.AlarmasCorreo
         public string AccountID { get; set; }
         public string DeviceID { get; set; }
         public int Timestamp { get; set; }
-        public int StatusCode { get; set; }
+        public string EventType { get; set; }
+        public string AlarmType { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public string Address { get; set; }
         public bool IsEnviado { get; set; }
 
     }

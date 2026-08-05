@@ -421,82 +421,33 @@ namespace VelsatBackendAPI.Data.Repositories
             if (calc.NumDias > 3)
                 return new List<EventsReporting>();
 
-            var lista = new List<EventsReporting>();
-
-            const string sqlHistoricos = "SELECT tabla FROM historicos WHERE timeini <= @FechafinUnix AND timefin >= @FechainiUnix";
-
-            var nombresTablas = _defaultConnection.Query<Historicos>(
-                sqlHistoricos,
-                new { FechainiUnix = calc.UnixFechaInicio, FechafinUnix = calc.UnixFechaFin },
-                transaction: _defaultTransaction).ToList();
-
-            if (nombresTablas.Count == 0)
-            {
-                const string sql = @"
-            SELECT 
+            const string sql = @"
+            SELECT
                 accountID  AS AcccountID,
                 deviceID   AS DeviceId,
-                timestamp  AS Timestamp,
-                statusCode AS StatusCode,
+                serverTime AS Timestamp,
+                eventType  AS EventType,
+                alarmType  AS AlarmType,
                 latitude   AS Latitude,
-                longitude  AS Longitude,
-                address    AS Address
-            FROM eventdata
+                longitude  AS Longitude
+            FROM deviceevent
             WHERE accountID  = @AccountID
               AND deviceID   = @DeviceID
-              AND statusCode NOT IN (61715, 61714, 64789, 1789)
-              AND timestamp  BETWEEN @FechaIni AND @FechaFin
-            ORDER BY timestamp DESC";
+              AND serverTime BETWEEN @FechaIni AND @FechaFin
+            ORDER BY serverTime DESC";
 
-                var result = await _defaultConnection.QueryAsync<EventsReporting>(
-                    sql,
-                    new
-                    {
-                        AccountID = accountID,
-                        DeviceID = deviceID,
-                        FechaIni = calc.UnixFechaInicio,
-                        FechaFin = calc.UnixFechaFin
-                    },
-                    transaction: _defaultTransaction);
-
-                lista = result.ToList();
-            }
-            else
-            {
-                foreach (var nombreTabla in nombresTablas)
+            var result = await _defaultConnection.QueryAsync<EventsReporting>(
+                sql,
+                new
                 {
-                    string sqlR = $@"
-                SELECT 
-                    accountID  AS AcccountID,
-                    deviceID   AS DeviceId,
-                    timestamp  AS Timestamp,
-                    statusCode AS StatusCode,
-                    latitude   AS Latitude,
-                    longitude  AS Longitude,
-                    address    AS Address
-                FROM {nombreTabla.Tabla}
-                WHERE accountID  = @AccountID
-                  AND deviceID   = @DeviceID
-                  AND statusCode NOT IN (61715, 61714, 64789, 1789)
-                  AND timestamp  BETWEEN @FechaIni AND @FechaFin
-                ORDER BY timestamp DESC";
+                    AccountID = accountID,
+                    DeviceID = deviceID,
+                    FechaIni = calc.UnixFechaInicio,
+                    FechaFin = calc.UnixFechaFin
+                },
+                transaction: _defaultTransaction);
 
-                    var datosTabla = _secondConnection.Query<EventsReporting>(
-                        sqlR,
-                        new
-                        {
-                            AccountID = accountID,
-                            DeviceID = deviceID,
-                            FechaIni = calc.UnixFechaInicio,
-                            FechaFin = calc.UnixFechaFin
-                        },
-                        transaction: _secondTransaction).ToList();
-
-                    lista.AddRange(datosTabla);
-                }
-
-                lista = lista.OrderByDescending(x => x.Timestamp).ToList();
-            }
+            var lista = result.ToList();
 
             for (int i = 0; i < lista.Count; i++)
                 lista[i].Item = i + 1;

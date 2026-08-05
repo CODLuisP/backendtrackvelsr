@@ -18,20 +18,28 @@ namespace VelsatBackendAPI.Data.Repositories
             _defaultTransaction = defaultTransaction;
         }
 
-        public async Task<DateTime?> ObtenerFechaUltimaAlarmaAsync()
-        {
-            const string sql = "SELECT fecha FROM tablaalarma WHERE id = 1";
-            return await _defaultConnection.QueryFirstOrDefaultAsync<DateTime?>(
-                sql,
-                transaction: _defaultTransaction); // ✅ Agregar transaction
-        }
-
         public async Task<List<RegistroAlarmas>> ObtenerAlertasNoEnviadasAsync()
         {
-            const string sql = "SELECT * FROM registroalarmas WHERE isEnviado = 0";
+            const string sql = @"
+                SELECT
+                    id         AS Codigo,
+                    accountID  AS AccountID,
+                    deviceID   AS DeviceID,
+                    serverTime AS Timestamp,
+                    eventType  AS EventType,
+                    alarmType  AS AlarmType,
+                    latitude   AS Latitude,
+                    longitude  AS Longitude,
+                    isEnviado  AS IsEnviado
+                FROM deviceevent
+                WHERE isEnviado = 0
+                  AND eventType = 'alarm'
+                  AND alarmType = 'lowBattery'
+                  AND accountID = 'speedmontalvo'";
+
             var result = await _defaultConnection.QueryAsync<RegistroAlarmas>(
                 sql,
-                transaction: _defaultTransaction); // ✅ Agregar transaction
+                transaction: _defaultTransaction);
             return result.ToList();
         }
 
@@ -40,11 +48,11 @@ namespace VelsatBackendAPI.Data.Repositories
             if (ids == null || !ids.Any())
                 return;
 
-            const string sql = "UPDATE registroalarmas SET isEnviado = 1 WHERE Codigo IN @Ids";
+            const string sql = "UPDATE deviceevent SET isEnviado = 1 WHERE id IN @Ids";
             await _defaultConnection.ExecuteAsync(
                 sql,
                 new { Ids = ids },
-                transaction: _defaultTransaction); // ✅ Agregar transaction
+                transaction: _defaultTransaction);
         }
     }
 }

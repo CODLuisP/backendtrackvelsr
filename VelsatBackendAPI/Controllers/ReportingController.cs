@@ -801,13 +801,21 @@ namespace VelsatBackendAPI.Controllers
                 {
                     var ev = eventsData[i];
 
-                    string descripcionEvento = ev.StatusCode switch
+                    string descripcionEvento = ev.EventType switch
                     {
-                        62477 => "Motor Apagado",
-                        62476 => "Motor Encendido",
-                        63553 => "Botón Pánico",
-                        64787 => "Battery Backup",
-                        _ => $"Código: {ev.StatusCode}"
+                        "ignitionOff" => "Motor Apagado",
+                        "ignitionOn" => "Motor Encendido",
+                        "alarm" => ev.AlarmType switch
+                        {
+                            "sos" => "Botón Pánico",
+                            "lowBattery" => "Battery Backup",
+                            _ => $"Alarma: {ev.AlarmType}"
+                        },
+                        "deviceOnline" => "Dispositivo Conectado",
+                        "deviceOffline" => "Dispositivo Desconectado",
+                        "geofenceEnter" => "Entró a Geocerca",
+                        "geofenceExit" => "Salió de Geocerca",
+                        _ => ev.EventType
                     };
 
                     string filaColorHex = colorAzul ? "#EDEFF2" : "#FFFFFF";

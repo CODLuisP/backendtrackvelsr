@@ -16,7 +16,6 @@ namespace VelsatBackendAPI.Data.Services
     public class AlertaCorreoService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
-        private DateTime _ultimaActualizacion = DateTime.MinValue;
 
         public AlertaCorreoService(IServiceProvider serviceProvider)
         {
@@ -40,32 +39,26 @@ namespace VelsatBackendAPI.Data.Services
 
                     var repo = uow.AlertaRepository;
 
-                    var fecha = await repo.ObtenerFechaUltimaAlarmaAsync();
+                    var alertas = await repo.ObtenerAlertasNoEnviadasAsync();
 
-                    if (fecha.HasValue && fecha > _ultimaActualizacion)
+                    if (alertas.Any())
                     {
-                        _ultimaActualizacion = fecha.Value;
-                        var alertas = await repo.ObtenerAlertasNoEnviadasAsync();
-
-                        if (alertas.Any())
+                        foreach (var alerta in alertas)
                         {
-                            foreach (var alerta in alertas)
+                            try
                             {
-                                try
-                                {
-                                    await EnviarCorreoAsync("rentaautoschiclayo@gmail.com", alerta);
-                                }
-                                catch (Exception ex)
-                                {
-                                }
+                                await EnviarCorreoAsync("diegocool36@gmail.com", alerta);
                             }
-
-                            // ✅ Marcar como enviadas
-                            await repo.MarcarComoEnviadasAsync(alertas.Select(a => a.Codigo).ToList());
-
-                            // ✅ CRÍTICO: Commit de la transacción
-                            uow.SaveChanges();
+                            catch (Exception ex)
+                            {
+                            }
                         }
+
+                        // ✅ Marcar como enviadas
+                        await repo.MarcarComoEnviadasAsync(alertas.Select(a => a.Codigo).ToList());
+
+                        // ✅ CRÍTICO: Commit de la transacción
+                        uow.SaveChanges();
                     }
                 }
                 catch (Exception ex)
@@ -92,10 +85,10 @@ namespace VelsatBackendAPI.Data.Services
                 EnableSsl = true
             };
 
-            string tituloAlerta = alerta.StatusCode switch
+            string tituloAlerta = alerta.AlarmType switch
             {
-                64787 => "🚨 Alerta! Desconexión de Batería",
-                63553 => "🚨 Alerta! Botón de Pánico",
+                "lowBattery" => "🚨 Alerta! Desconexión de Batería",
+                "sos" => "🚨 Alerta! Botón de Pánico",
                 _ => "🚨 Alerta! Evento Desconocido"
             };
 
@@ -122,13 +115,13 @@ namespace VelsatBackendAPI.Data.Services
             string tituloAlerta;
             string imagenAlerta;
 
-            switch (alerta.StatusCode)
+            switch (alerta.AlarmType)
             {
-                case 64787:
+                case "lowBattery":
                     tituloAlerta = "DESCONEXIÓN DE BATERÍA";
                     imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/bateria_c59x4t.jpg";
                     break;
-                case 63553:
+                case "sos":
                     tituloAlerta = "BOTÓN DE PÁNICO";
                     imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/panico_i540gn.jpg";
                     break;
@@ -186,7 +179,7 @@ namespace VelsatBackendAPI.Data.Services
                                 <h2 style='font-size: 16px; color: #d00000; margin: 5px 0 10px 0;'>{tituloAlerta}</h2>
                                 <p style='margin: 3px 0; font-size: 11px;'><strong>Fecha:</strong> {fecha}</p>
                                 <p style='margin: 3px 0; font-size: 11px;'><strong>Hora:</strong> {hora}</p>
-                                <p style='margin: 3px 0; font-size: 11px;'><strong>Ubicación:</strong> {alerta.Address}</p>
+                                <p style='margin: 3px 0; font-size: 11px;'><strong>Ubicación:</strong> {alerta.Latitude}, {alerta.Longitude}</p>
                             </div>
                         </div>
 

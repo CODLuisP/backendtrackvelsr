@@ -9,7 +9,6 @@ namespace VelsatBackendAPI.Data.Repositories
 {
     public interface IAlertaRepository
     {
-        Task<DateTime?> ObtenerFechaUltimaAlarmaAsync();
         Task<List<RegistroAlarmas>> ObtenerAlertasNoEnviadasAsync();
         Task MarcarComoEnviadasAsync(List<int> ids);
     }
