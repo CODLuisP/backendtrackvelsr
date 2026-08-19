@@ -208,6 +208,42 @@ namespace VelsatBackendAPI.Data.Repositories
             return resultado;
         }
 
+        public async Task<IEnumerable<DeviceSutran>> GetUnidadesSutran()
+        {
+            var sql = @"SELECT accountID, deviceID FROM device WHERE sutran = '1'";
+
+            var resultado = await _defaultConnection.QueryAsync<DeviceSutran>(sql, transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<int> HabilitarSutran(string accountID, string deviceID, char valor)
+        {
+            var sql = @"UPDATE device SET sutran = @Valor WHERE accountID = @AccountID AND deviceID = @DeviceID";
+
+            var resultado = await _defaultConnection.ExecuteAsync(sql,
+                new { Valor = valor, AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<IEnumerable<AuditoriaSutran>> GetUltimosRegistrosAuditoriaSutran(string accountID, string deviceID)
+        {
+            var sql = @"SELECT id, accountID, deviceID, fecharegistro, lastenvio, lastrespuesta
+                        FROM auditoriasutran
+                        WHERE accountID = @AccountID AND deviceID = @DeviceID
+                        ORDER BY fecharegistro DESC
+                        LIMIT 5";
+
+            var resultado = await _defaultConnection.QueryAsync<AuditoriaSutran>(sql,
+                new { AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+
         //----------------------------------UNIDAD--------------------------------------------------//
         public async Task<List<Documento>> GetDocumento(string accountID)
         {

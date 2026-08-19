@@ -47,7 +47,7 @@ namespace VelsatBackendAPI.Data.Services
                         {
                             try
                             {
-                                await EnviarCorreoAsync("diegocool36@gmail.com", alerta);
+                                await EnviarCorreoAsync("rentaautoschiclayo@gmail.com", alerta);
                             }
                             catch (Exception ex)
                             {
@@ -85,10 +85,11 @@ namespace VelsatBackendAPI.Data.Services
                 EnableSsl = true
             };
 
-            string tituloAlerta = alerta.AlarmType switch
+            string tituloAlerta = (alerta.EventType, alerta.AlarmType) switch
             {
-                "lowBattery" => "🚨 Alerta! Desconexión de Batería",
-                "sos" => "🚨 Alerta! Botón de Pánico",
+                ("alarm", "powerCut") => "🚨 Alerta! Desconexión de Batería",
+                ("alarm", "sos") => "🚨 Alerta! Botón de Pánico",
+                ("deviceOverspeed", _) => "🚨 Alerta! Exceso de Velocidad",
                 _ => "🚨 Alerta! Evento Desconocido"
             };
 
@@ -115,15 +116,19 @@ namespace VelsatBackendAPI.Data.Services
             string tituloAlerta;
             string imagenAlerta;
 
-            switch (alerta.AlarmType)
+            switch (alerta.EventType, alerta.AlarmType)
             {
-                case "lowBattery":
+                case ("alarm", "powerCut"):
                     tituloAlerta = "DESCONEXIÓN DE BATERÍA";
                     imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/bateria_c59x4t.jpg";
                     break;
-                case "sos":
+                case ("alarm", "sos"):
                     tituloAlerta = "BOTÓN DE PÁNICO";
                     imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/panico_i540gn.jpg";
+                    break;
+                case ("deviceOverspeed", _):
+                    tituloAlerta = "EXCESO DE VELOCIDAD";
+                    imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/bateria_c59x4t.jpg";
                     break;
                 default:
                     tituloAlerta = "ALERTA DESCONOCIDA";

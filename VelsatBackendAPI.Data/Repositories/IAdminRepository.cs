@@ -42,6 +42,12 @@ namespace VelsatBackendAPI.Data.Repositories
 
         Task<IEnumerable<DeviceAuditoria>> GetUnidadesGoldcar();
 
+        Task<IEnumerable<AuditoriaSutran>> GetUltimosRegistrosAuditoriaSutran(string accountID, string deviceID);
+
+        Task<int> HabilitarSutran(string accountID, string deviceID, char valor);
+
+        Task<IEnumerable<DeviceSutran>> GetUnidadesSutran();
+
 
         //DOCUMENTACIÓN
         //----------------------------------UNIDAD--------------------------------------------------//

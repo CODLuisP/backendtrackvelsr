@@ -808,7 +808,7 @@ namespace VelsatBackendAPI.Controllers
                         "alarm" => ev.AlarmType switch
                         {
                             "sos" => "Botón Pánico",
-                            "lowBattery" => "Battery Backup",
+                            "powerCut" => "Desconexión de Batería",
                             _ => $"Alarma: {ev.AlarmType}"
                         },
                         "deviceOnline" => "Dispositivo Conectado",

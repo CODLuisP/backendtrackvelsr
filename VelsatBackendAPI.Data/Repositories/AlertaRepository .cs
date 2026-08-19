@@ -33,9 +33,11 @@ namespace VelsatBackendAPI.Data.Repositories
                     isEnviado  AS IsEnviado
                 FROM deviceevent
                 WHERE isEnviado = 0
-                  AND eventType = 'alarm'
-                  AND alarmType = 'lowBattery'
-                  AND accountID = 'speedmontalvo'";
+                  AND accountID = 'speedmontalvo'
+                  AND (
+                        (eventType = 'alarm' AND alarmType = 'powerCut')
+                     OR eventType = 'deviceOverspeed'
+                      )";
 
             var result = await _defaultConnection.QueryAsync<RegistroAlarmas>(
                 sql,
