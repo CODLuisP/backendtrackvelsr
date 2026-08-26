@@ -19,6 +19,8 @@ namespace VelsatBackendAPI.Controllers
             _uow = uow;
         }
 
+        private static bool MotivoValido(string motivo) => !string.IsNullOrWhiteSpace(motivo) && motivo.Trim().Length >= 6;
+
         [HttpGet("Usuarios")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -34,13 +36,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("UpdateUser")]
-        public async Task<IActionResult> UpdateUser([FromBody] Usuarioadmin usuario, [FromQuery] string actor)
+        public async Task<IActionResult> UpdateUser([FromBody] Usuarioadmin usuario, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (usuario == null)
                 {
                     return BadRequest(new { message = "El usuario no puede ser nulo" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.UpdateUser(usuario);
@@ -51,7 +58,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Usuarios", "Actualizar", usuario.AccountID,
-                    $"Se actualizó el usuario {usuario.AccountID}");
+                    $"Se actualizó el usuario {usuario.AccountID}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -64,13 +71,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpDelete("DeleteUsuario/{accountID}")]
-        public async Task<IActionResult> DeleteUser(string accountID, [FromQuery] string actor)
+        public async Task<IActionResult> DeleteUser(string accountID, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (string.IsNullOrEmpty(accountID))
                 {
                     return BadRequest(new { message = "El accountID no puede ser nulo o vacío" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.DeleteUser(accountID);
@@ -81,7 +93,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Usuarios", "Eliminar", accountID,
-                    $"Se eliminó el usuario {accountID}");
+                    $"Se eliminó el usuario {accountID}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -173,13 +185,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("UpdateDeviceUser")]
-        public async Task<IActionResult> UpdateSubUser([FromBody] Deviceuser usuario, [FromQuery] string actor)
+        public async Task<IActionResult> UpdateSubUser([FromBody] Deviceuser usuario, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (usuario == null)
                 {
                     return BadRequest(new { message = "El device user no puede ser nulo" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.UpdateSubUser(usuario);
@@ -190,7 +207,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "SubUsuarios", "Actualizar", usuario.UserId,
-                    $"Se actualizó el subusuario {usuario.UserId}");
+                    $"Se actualizó el subusuario {usuario.UserId}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -203,13 +220,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpDelete("DeleteDeviceUser/{id}")]
-        public async Task<IActionResult> DeleteSubUser(string id, [FromQuery] string actor)
+        public async Task<IActionResult> DeleteSubUser(string id, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (string.IsNullOrEmpty(id))
                 {
                     return BadRequest(new { message = "El id no puede ser nulo o vacío" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.DeleteSubUser(id);
@@ -220,7 +242,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "SubUsuarios", "Eliminar", id,
-                    $"Se eliminó el subusuario con id {id}");
+                    $"Se eliminó el subusuario con id {id}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -247,10 +269,15 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("UpdateDevice")]
-        public async Task<IActionResult> UpdateDevice([FromBody] DeviceAdmin device, string oldDeviceID, string oldAccountID, [FromQuery] string actor)
+        public async Task<IActionResult> UpdateDevice([FromBody] DeviceAdmin device, string oldDeviceID, string oldAccountID, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
+                }
+
                 var resultado = await _uow.AdminRepository.UpdateDevice(device, oldDeviceID, oldAccountID);
 
                 if (resultado == 0)
@@ -259,7 +286,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Unidades", "Actualizar", device.DeviceID,
-                    $"Se actualizó el dispositivo {oldDeviceID} (cuenta {oldAccountID})");
+                    $"Se actualizó el dispositivo {oldDeviceID} (cuenta {oldAccountID}). Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -297,13 +324,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpDelete("DeleteDevice/{deviceID}/{accountID}")]
-        public async Task<IActionResult> DeleteDevice(string deviceID, string accountID, [FromQuery] string actor)
+        public async Task<IActionResult> DeleteDevice(string deviceID, string accountID, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (string.IsNullOrEmpty(deviceID) || string.IsNullOrEmpty(accountID))
                 {
                     return BadRequest(new { message = "El deviceID y accountID no pueden ser nulos o vacíos" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.DeleteDevice(deviceID, accountID);
@@ -314,7 +346,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Unidades", "Eliminar", deviceID,
-                    $"Se eliminó el dispositivo {deviceID} de la cuenta {accountID}");
+                    $"Se eliminó el dispositivo {deviceID} de la cuenta {accountID}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -355,13 +387,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("HabilitarGoldcar")]
-        public async Task<IActionResult> HabilitarGoldcar(string accountID, string deviceID, char valor, [FromQuery] string actor)
+        public async Task<IActionResult> HabilitarGoldcar(string accountID, string deviceID, char valor, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (string.IsNullOrEmpty(accountID) || string.IsNullOrEmpty(deviceID))
                 {
                     return BadRequest(new { message = "El accountID y deviceID no pueden ser nulos o vacíos" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.HabilitarGoldcar(accountID, deviceID, valor);
@@ -372,7 +409,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Goldcar", valor == '1' ? "Habilitar" : "Deshabilitar", deviceID,
-                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Goldcar para el dispositivo {deviceID} (cuenta {accountID})");
+                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Goldcar para el dispositivo {deviceID} (cuenta {accountID}). Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -418,13 +455,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("HabilitarSutran")]
-        public async Task<IActionResult> HabilitarSutran(string accountID, string deviceID, char valor, [FromQuery] string actor)
+        public async Task<IActionResult> HabilitarSutran(string accountID, string deviceID, char valor, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (string.IsNullOrEmpty(accountID) || string.IsNullOrEmpty(deviceID))
                 {
                     return BadRequest(new { message = "El accountID y deviceID no pueden ser nulos o vacíos" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.HabilitarSutran(accountID, deviceID, valor);
@@ -435,7 +477,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Sutran", valor == '1' ? "Habilitar" : "Deshabilitar", deviceID,
-                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Sutran para el dispositivo {deviceID} (cuenta {accountID})");
+                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Sutran para el dispositivo {deviceID} (cuenta {accountID}). Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -481,13 +523,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("HabilitarOsinergmin")]
-        public async Task<IActionResult> HabilitarOsinergmin(string accountID, string deviceID, char valor, [FromQuery] string actor)
+        public async Task<IActionResult> HabilitarOsinergmin(string accountID, string deviceID, char valor, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (string.IsNullOrEmpty(accountID) || string.IsNullOrEmpty(deviceID))
                 {
                     return BadRequest(new { message = "El accountID y deviceID no pueden ser nulos o vacíos" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.HabilitarOsinergmin(accountID, deviceID, valor);
@@ -498,7 +545,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Osinergmin", valor == '1' ? "Habilitar" : "Deshabilitar", deviceID,
-                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Osinergmin para el dispositivo {deviceID} (cuenta {accountID})");
+                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Osinergmin para el dispositivo {deviceID} (cuenta {accountID}). Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
