@@ -106,7 +106,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPost("InsertUsuario")]
-        public async Task<IActionResult> InsertUser([FromBody] Usuarioadmin usuario, [FromQuery] string actor)
+        public async Task<IActionResult> InsertUser([FromBody] Usuarioadmin usuario, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
@@ -120,6 +120,11 @@ namespace VelsatBackendAPI.Controllers
                     return BadRequest(new { message = "AccountID y Password son obligatorios" });
                 }
 
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
+                }
+
                 var rowsAffected = await _uow.AdminRepository.InsertUser(usuario);
 
                 if (rowsAffected == 0)
@@ -128,7 +133,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Usuarios", "Crear", usuario.AccountID,
-                    $"Se creó el usuario {usuario.AccountID}");
+                    $"Se creó el usuario {usuario.AccountID}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -155,13 +160,18 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPost("InsertDeviceUser")]
-        public async Task<IActionResult> InsertSubUser([FromBody] Deviceuser usuario, [FromQuery] string actor)
+        public async Task<IActionResult> InsertSubUser([FromBody] Deviceuser usuario, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
                 if (usuario == null)
                 {
                     return BadRequest(new { message = "El device user no puede ser nulo" });
+                }
+
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
                 }
 
                 var rowsAffected = await _uow.AdminRepository.InsertSubUser(usuario);
@@ -172,7 +182,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "SubUsuarios", "Crear", usuario.UserId,
-                    $"Se creó el subusuario {usuario.UserId} sobre el dispositivo {usuario.DeviceID}");
+                    $"Se creó el subusuario {usuario.UserId} sobre el dispositivo {usuario.DeviceID}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
@@ -299,10 +309,15 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPost("InsertDevice")]
-        public async Task<IActionResult> InsertDevice([FromBody] DeviceAdmin device, [FromQuery] string actor)
+        public async Task<IActionResult> InsertDevice([FromBody] DeviceAdmin device, [FromQuery] string actor, [FromQuery] string motivo)
         {
             try
             {
+                if (!MotivoValido(motivo))
+                {
+                    return BadRequest(new { message = "El motivo es obligatorio y debe tener al menos 6 caracteres" });
+                }
+
                 var resultado = await _uow.AdminRepository.InsertDevice(device);
 
                 if (resultado == 0)
@@ -311,7 +326,7 @@ namespace VelsatBackendAPI.Controllers
                 }
 
                 await _uow.AdminRepository.RegistrarAuditoria(actor, "Unidades", "Crear", device.DeviceID,
-                    $"Se creó el dispositivo {device.DeviceID} para la cuenta {device.AccountID}");
+                    $"Se creó el dispositivo {device.DeviceID} para la cuenta {device.AccountID}. Motivo: {motivo.Trim()}");
 
                 _uow.SaveChanges();
 
