@@ -243,6 +243,81 @@ namespace VelsatBackendAPI.Data.Repositories
             return resultado;
         }
 
+        public async Task<IEnumerable<DeviceOsinergmin>> GetUnidadesOsinergmin()
+        {
+            var sql = @"SELECT accountID, deviceID FROM device WHERE osinergmin = '1'";
+
+            var resultado = await _defaultConnection.QueryAsync<DeviceOsinergmin>(sql, transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<int> HabilitarOsinergmin(string accountID, string deviceID, char valor)
+        {
+            var sql = @"UPDATE device SET osinergmin = @Valor WHERE accountID = @AccountID AND deviceID = @DeviceID";
+
+            var resultado = await _defaultConnection.ExecuteAsync(sql,
+                new { Valor = valor, AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+        public async Task<IEnumerable<AuditoriaOsinergmin>> GetUltimosRegistrosAuditoriaOsinergmin(string accountID, string deviceID)
+        {
+            var sql = @"SELECT id, accountID, deviceID, fecharegistro, lastenvio, lastrespuesta
+                        FROM auditoriaosinergmin
+                        WHERE accountID = @AccountID AND deviceID = @DeviceID
+                        ORDER BY fecharegistro DESC
+                        LIMIT 5";
+
+            var resultado = await _defaultConnection.QueryAsync<AuditoriaOsinergmin>(sql,
+                new { AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
+
+        //----------------------------------AUDITORÍA GENERAL----------------------------------------//
+        public async Task RegistrarAuditoria(string usuario, string modulo, string accion, string entidad, string detalle)
+        {
+            var peruTime = DateTime.UtcNow.AddHours(-5);
+
+            var sql = @"INSERT INTO auditoria_general (usuario, modulo, accion, entidad, detalle, fecharegistro)
+                        VALUES (@Usuario, @Modulo, @Accion, @Entidad, @Detalle, @Fecharegistro)";
+
+            await _defaultConnection.ExecuteAsync(sql, new
+            {
+                Usuario = string.IsNullOrWhiteSpace(usuario) ? "desconocido" : usuario,
+                Modulo = modulo,
+                Accion = accion,
+                Entidad = entidad,
+                Detalle = detalle,
+                Fecharegistro = peruTime
+            }, transaction: _defaultTransaction);
+        }
+
+        public async Task<IEnumerable<AuditoriaGeneral>> GetAuditoriaGeneral(int limit, string modulo, string usuario)
+        {
+            var sql = @"SELECT id, usuario, modulo, accion, entidad, detalle, fecharegistro
+                        FROM auditoria_general
+                        WHERE (@Modulo IS NULL OR modulo = @Modulo)
+                          AND (@Usuario IS NULL OR usuario = @Usuario)
+                        ORDER BY fecharegistro DESC
+                        LIMIT @Limit";
+
+            var resultado = await _defaultConnection.QueryAsync<AuditoriaGeneral>(sql,
+                new
+                {
+                    Limit = limit,
+                    Modulo = string.IsNullOrWhiteSpace(modulo) ? null : modulo,
+                    Usuario = string.IsNullOrWhiteSpace(usuario) ? null : usuario
+                },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
 
         //----------------------------------UNIDAD--------------------------------------------------//
         public async Task<List<Documento>> GetDocumento(string accountID)

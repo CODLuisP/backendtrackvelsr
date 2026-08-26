@@ -34,7 +34,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("UpdateUser")]
-        public async Task<IActionResult> UpdateUser([FromBody] Usuarioadmin usuario)
+        public async Task<IActionResult> UpdateUser([FromBody] Usuarioadmin usuario, [FromQuery] string actor)
         {
             try
             {
@@ -49,6 +49,10 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return NotFound(new { message = "Usuario no encontrado" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Usuarios", "Actualizar", usuario.AccountID,
+                    $"Se actualizó el usuario {usuario.AccountID}");
+
                 _uow.SaveChanges();
 
                 return Ok(new { message = "Usuario actualizado correctamente", rowsAffected });
@@ -60,7 +64,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpDelete("DeleteUsuario/{accountID}")]
-        public async Task<IActionResult> DeleteUser(string accountID)
+        public async Task<IActionResult> DeleteUser(string accountID, [FromQuery] string actor)
         {
             try
             {
@@ -76,6 +80,9 @@ namespace VelsatBackendAPI.Controllers
                     return NotFound(new { message = "Usuario no encontrado" });
                 }
 
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Usuarios", "Eliminar", accountID,
+                    $"Se eliminó el usuario {accountID}");
+
                 _uow.SaveChanges();
 
                 return Ok(new { message = "Usuario eliminado correctamente", accountID });
@@ -87,7 +94,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPost("InsertUsuario")]
-        public async Task<IActionResult> InsertUser([FromBody] Usuarioadmin usuario)
+        public async Task<IActionResult> InsertUser([FromBody] Usuarioadmin usuario, [FromQuery] string actor)
         {
             try
             {
@@ -107,6 +114,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return StatusCode(500, new { message = "No se pudo insertar el usuario" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Usuarios", "Crear", usuario.AccountID,
+                    $"Se creó el usuario {usuario.AccountID}");
 
                 _uow.SaveChanges();
 
@@ -133,7 +143,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPost("InsertDeviceUser")]
-        public async Task<IActionResult> InsertSubUser([FromBody] Deviceuser usuario)
+        public async Task<IActionResult> InsertSubUser([FromBody] Deviceuser usuario, [FromQuery] string actor)
         {
             try
             {
@@ -149,6 +159,9 @@ namespace VelsatBackendAPI.Controllers
                     return StatusCode(500, new { message = "No se pudo insertar el device user" });
                 }
 
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "SubUsuarios", "Crear", usuario.UserId,
+                    $"Se creó el subusuario {usuario.UserId} sobre el dispositivo {usuario.DeviceID}");
+
                 _uow.SaveChanges();
 
                 return Ok(new { message = "Device user creado correctamente", id = usuario.Id });
@@ -160,7 +173,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("UpdateDeviceUser")]
-        public async Task<IActionResult> UpdateSubUser([FromBody] Deviceuser usuario)
+        public async Task<IActionResult> UpdateSubUser([FromBody] Deviceuser usuario, [FromQuery] string actor)
         {
             try
             {
@@ -176,6 +189,9 @@ namespace VelsatBackendAPI.Controllers
                     return NotFound(new { message = "Device user no encontrado" });
                 }
 
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "SubUsuarios", "Actualizar", usuario.UserId,
+                    $"Se actualizó el subusuario {usuario.UserId}");
+
                 _uow.SaveChanges();
 
                 return Ok(new { message = "Device user actualizado correctamente", rowsAffected });
@@ -187,7 +203,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpDelete("DeleteDeviceUser/{id}")]
-        public async Task<IActionResult> DeleteSubUser(string id)
+        public async Task<IActionResult> DeleteSubUser(string id, [FromQuery] string actor)
         {
             try
             {
@@ -202,6 +218,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return NotFound(new { message = "Device user no encontrado" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "SubUsuarios", "Eliminar", id,
+                    $"Se eliminó el subusuario con id {id}");
 
                 _uow.SaveChanges();
 
@@ -228,7 +247,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("UpdateDevice")]
-        public async Task<IActionResult> UpdateDevice([FromBody] DeviceAdmin device, string oldDeviceID, string oldAccountID)
+        public async Task<IActionResult> UpdateDevice([FromBody] DeviceAdmin device, string oldDeviceID, string oldAccountID, [FromQuery] string actor)
         {
             try
             {
@@ -238,6 +257,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return NotFound(new { message = "Dispositivo no encontrado" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Unidades", "Actualizar", device.DeviceID,
+                    $"Se actualizó el dispositivo {oldDeviceID} (cuenta {oldAccountID})");
 
                 _uow.SaveChanges();
 
@@ -250,7 +272,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPost("InsertDevice")]
-        public async Task<IActionResult> InsertDevice([FromBody] DeviceAdmin device)
+        public async Task<IActionResult> InsertDevice([FromBody] DeviceAdmin device, [FromQuery] string actor)
         {
             try
             {
@@ -260,6 +282,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return BadRequest(new { message = "No se pudo crear el dispositivo" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Unidades", "Crear", device.DeviceID,
+                    $"Se creó el dispositivo {device.DeviceID} para la cuenta {device.AccountID}");
 
                 _uow.SaveChanges();
 
@@ -272,7 +297,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpDelete("DeleteDevice/{deviceID}/{accountID}")]
-        public async Task<IActionResult> DeleteDevice(string deviceID, string accountID)
+        public async Task<IActionResult> DeleteDevice(string deviceID, string accountID, [FromQuery] string actor)
         {
             try
             {
@@ -287,6 +312,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return NotFound(new { message = "Dispositivo no encontrado" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Unidades", "Eliminar", deviceID,
+                    $"Se eliminó el dispositivo {deviceID} de la cuenta {accountID}");
 
                 _uow.SaveChanges();
 
@@ -327,7 +355,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("HabilitarGoldcar")]
-        public async Task<IActionResult> HabilitarGoldcar(string accountID, string deviceID, char valor)
+        public async Task<IActionResult> HabilitarGoldcar(string accountID, string deviceID, char valor, [FromQuery] string actor)
         {
             try
             {
@@ -342,6 +370,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return NotFound(new { message = "Dispositivo no encontrado" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Goldcar", valor == '1' ? "Habilitar" : "Deshabilitar", deviceID,
+                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Goldcar para el dispositivo {deviceID} (cuenta {accountID})");
 
                 _uow.SaveChanges();
 
@@ -387,7 +418,7 @@ namespace VelsatBackendAPI.Controllers
         }
 
         [HttpPut("HabilitarSutran")]
-        public async Task<IActionResult> HabilitarSutran(string accountID, string deviceID, char valor)
+        public async Task<IActionResult> HabilitarSutran(string accountID, string deviceID, char valor, [FromQuery] string actor)
         {
             try
             {
@@ -402,6 +433,9 @@ namespace VelsatBackendAPI.Controllers
                 {
                     return NotFound(new { message = "Dispositivo no encontrado" });
                 }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Sutran", valor == '1' ? "Habilitar" : "Deshabilitar", deviceID,
+                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Sutran para el dispositivo {deviceID} (cuenta {accountID})");
 
                 _uow.SaveChanges();
 
@@ -429,6 +463,83 @@ namespace VelsatBackendAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error al obtener la auditoría UTRAN", error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetUnidadesOsinergmin")]
+        public async Task<IActionResult> GetUnidadesOsinergmin()
+        {
+            try
+            {
+                var devices = await _readOnlyUow.AdminRepository.GetUnidadesOsinergmin();
+                return Ok(devices);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener las unidades Osinergmin", error = ex.Message });
+            }
+        }
+
+        [HttpPut("HabilitarOsinergmin")]
+        public async Task<IActionResult> HabilitarOsinergmin(string accountID, string deviceID, char valor, [FromQuery] string actor)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(accountID) || string.IsNullOrEmpty(deviceID))
+                {
+                    return BadRequest(new { message = "El accountID y deviceID no pueden ser nulos o vacíos" });
+                }
+
+                var rowsAffected = await _uow.AdminRepository.HabilitarOsinergmin(accountID, deviceID, valor);
+
+                if (rowsAffected == 0)
+                {
+                    return NotFound(new { message = "Dispositivo no encontrado" });
+                }
+
+                await _uow.AdminRepository.RegistrarAuditoria(actor, "Osinergmin", valor == '1' ? "Habilitar" : "Deshabilitar", deviceID,
+                    $"Se {(valor == '1' ? "habilitó" : "deshabilitó")} Osinergmin para el dispositivo {deviceID} (cuenta {accountID})");
+
+                _uow.SaveChanges();
+
+                return Ok(new { message = "Osinergmin actualizado correctamente", accountID, deviceID, valor });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al actualizar Osinergmin", error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetAuditoriaGeneral")]
+        public async Task<IActionResult> GetAuditoriaGeneral(int limit = 200, string modulo = null, string usuario = null)
+        {
+            try
+            {
+                var registros = await _readOnlyUow.AdminRepository.GetAuditoriaGeneral(limit, modulo, usuario);
+                return Ok(registros);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la auditoría general", error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetAuditoriaOsinergmin")]
+        public async Task<IActionResult> GetUltimosRegistrosAuditoriaOsinergmin(string accountID, string deviceID)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(accountID) || string.IsNullOrEmpty(deviceID))
+                {
+                    return BadRequest(new { message = "El accountID y deviceID no pueden ser nulos o vacíos" });
+                }
+
+                var registros = await _readOnlyUow.AdminRepository.GetUltimosRegistrosAuditoriaOsinergmin(accountID, deviceID);
+                return Ok(registros);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la auditoría Osinergmin", error = ex.Message });
             }
         }
 

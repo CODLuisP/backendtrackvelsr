@@ -48,6 +48,16 @@ namespace VelsatBackendAPI.Data.Repositories
 
         Task<IEnumerable<DeviceSutran>> GetUnidadesSutran();
 
+        Task<IEnumerable<AuditoriaOsinergmin>> GetUltimosRegistrosAuditoriaOsinergmin(string accountID, string deviceID);
+
+        Task<int> HabilitarOsinergmin(string accountID, string deviceID, char valor);
+
+        Task<IEnumerable<DeviceOsinergmin>> GetUnidadesOsinergmin();
+
+        //AUDITORÍA GENERAL (registro de movimientos)
+        Task RegistrarAuditoria(string usuario, string modulo, string accion, string entidad, string detalle);
+
+        Task<IEnumerable<AuditoriaGeneral>> GetAuditoriaGeneral(int limit, string modulo, string usuario);
 
         //DOCUMENTACIÓN
         //----------------------------------UNIDAD--------------------------------------------------//
