@@ -96,7 +96,7 @@ var app = builder.Build();
 // ✅ Limpiar todos los pools de MySQL al iniciar la aplicación
 try
 {
-    MySql.Data.MySqlClient.MySqlConnection.ClearAllPools();
+    MySqlConnector.MySqlConnection.ClearAllPools();
     Console.WriteLine("✅ [Startup] Pools de MySQL limpiados correctamente");
 }
 catch (Exception ex)
