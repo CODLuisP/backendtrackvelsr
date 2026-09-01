@@ -1,0 +1,30 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "settings": {
+    "secretkey": "REPLACE_WITH_YOUR_LOCAL_SECRET_KEY"
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "server=localhost;port=3306;database=gts;uid=REPLACE_USER;password=REPLACE_PASSWORD;Charset=utf8mb4;Pooling=true;Allow User Variables=True;MinimumPoolSize=5;MaximumPoolSize=200;ConnectionTimeout=60;ConnectionLifeTime=300;ConnectionReset=true;DefaultCommandTimeout=120;",
+    "SecondConnection": "server=localhost;port=3306;database=dbv16_01;uid=REPLACE_USER;password=REPLACE_PASSWORD;Charset=utf8mb4;Pooling=true;Allow User Variables=True;MinimumPoolSize=5;MaximumPoolSize=200;ConnectionTimeout=60;ConnectionLifeTime=300;ConnectionReset=true;DefaultCommandTimeout=120;",
+    "ThirdConnection": "server=localhost;port=3306;database=gts;uid=REPLACE_USER;password=REPLACE_PASSWORD;Charset=utf8mb4;Pooling=true;Allow User Variables=True;MinimumPoolSize=5;MaximumPoolSize=200;ConnectionTimeout=60;ConnectionLifeTime=300;ConnectionReset=true;DefaultCommandTimeout=120;"
+  },
+  "Kestrel": {
+    "Limits": {
+      "MaxConcurrentConnections": 500,
+      "MaxConcurrentUpgradedConnections": 300,
+      "KeepAliveTimeout": "00:02:00",
+      "RequestHeadersTimeout": "00:00:30",
+      "MaxRequestBodySize": 52428800
+    }
+  },
+  "Firebase": {
+    "ProjectId": "velsat-app",
+    "CredentialsPath": "firebase-credentials.json"
+  }
+}

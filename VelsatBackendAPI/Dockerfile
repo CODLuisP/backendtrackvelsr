@@ -1,6 +1,17 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS base
 WORKDIR /app
-EXPOSE 80
+
+# Zona horaria America/Lima
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tzdata \
+    && ln -snf /usr/share/zoneinfo/America/Lima /etc/localtime \
+    && echo "America/Lima" > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
+ENV TZ=America/Lima
+
+# Escuchar en todas las interfaces (0.0.0.0), no en localhost
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
 WORKDIR /src

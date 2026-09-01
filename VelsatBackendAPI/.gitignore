@@ -3,4 +3,7 @@ obj/
 .vs/
 *.user
 *.suo
-appsettings.Development.json
+appsettings.json
+appsettings.*.json
+!appsettings.json.example
+firebase-credentials.json

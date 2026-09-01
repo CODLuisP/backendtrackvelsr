@@ -14,7 +14,6 @@ using MySqlConfiguration = VelsatBackendAPI.Data.MySqlConfiguration;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Configuration.AddJsonFile("appsettings.json");
 
 var secretkey = builder.Configuration.GetSection("settings").GetSection("secretkey").Value;
 var keyBytes = Encoding.UTF8.GetBytes(secretkey);
