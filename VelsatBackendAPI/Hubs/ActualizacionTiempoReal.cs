@@ -59,6 +59,7 @@ namespace VelsatBackendAPI.Hubs
             if (string.IsNullOrEmpty(username))
                 return;
 
+
             try
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, username);
