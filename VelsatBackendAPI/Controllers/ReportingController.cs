@@ -19,6 +19,8 @@ namespace VelsatBackendAPI.Controllers
     public class ReportingController : ControllerBase
     {
         private readonly IReadOnlyUnitOfWork _readOnlyUow;
+        private static readonly string CarLogoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "CarLogo.jpg");
+        private static readonly string VelsatLogoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "VelsatLogo.png");
 
         public ReportingController(IReadOnlyUnitOfWork readOnlyUow) // ✅ Cambiar
         {
@@ -154,7 +156,7 @@ namespace VelsatBackendAPI.Controllers
                 worksheet.Cell("H10").Style.Font.FontSize = 10;
                 worksheet.Cell("H10").Style.Font.SetBold();
 
-                string imagePath = "C:\\inetpub\\wwwroot\\CarLogo.jpg";
+                string imagePath = CarLogoPath;
                 var image = worksheet.AddPicture(imagePath).MoveTo(worksheet.Cell("B4")).WithSize(81, 81);
 
 
@@ -165,7 +167,7 @@ namespace VelsatBackendAPI.Controllers
                 mergedRange.Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 mergedRange.Merge().Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-                string imagePath2 = "C:\\inetpub\\wwwroot\\VelsatLogo.png";
+                string imagePath2 = VelsatLogoPath;
                 var image2 = worksheet.AddPicture(imagePath2).MoveTo(worksheet.Cell("H4")).WithSize(240, 80).MoveTo(800, 60);
 
 
@@ -384,7 +386,7 @@ namespace VelsatBackendAPI.Controllers
                 worksheet.Cell("J10").Style.Font.FontSize = 10;
                 worksheet.Cell("J10").Style.Font.SetBold();
 
-                string imagePath = "C:\\inetpub\\wwwroot\\CarLogo.jpg";
+                string imagePath = CarLogoPath;
                 var image = worksheet.AddPicture(imagePath).MoveTo(worksheet.Cell("B4")).WithSize(81, 81);
 
 
@@ -395,7 +397,7 @@ namespace VelsatBackendAPI.Controllers
                 mergedRange.Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 mergedRange.Merge().Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-                string imagePath2 = "C:\\inetpub\\wwwroot\\VelsatLogo.png";
+                string imagePath2 = VelsatLogoPath;
                 var image2 = worksheet.AddPicture(imagePath2).MoveTo(worksheet.Cell("I4")).WithSize(240, 80).MoveTo(815, 60);
 
                 worksheet.Row(12).Height = 40;
@@ -616,7 +618,7 @@ namespace VelsatBackendAPI.Controllers
                 worksheet.Cell("J10").Style.Font.FontSize = 10;
                 worksheet.Cell("J10").Style.Font.SetBold();
 
-                string imagePath = "C:\\inetpub\\wwwroot\\CarLogo.jpg";
+                string imagePath = CarLogoPath;
                 var image = worksheet.AddPicture(imagePath).MoveTo(worksheet.Cell("B4")).WithSize(81, 81);
 
 
@@ -627,7 +629,7 @@ namespace VelsatBackendAPI.Controllers
                 mergedRange.Merge().Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 mergedRange.Merge().Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-                string imagePath2 = "C:\\inetpub\\wwwroot\\VelsatLogo.png";
+                string imagePath2 = VelsatLogoPath;
                 var image2 = worksheet.AddPicture(imagePath2).MoveTo(worksheet.Cell("I4")).WithSize(240, 80).MoveTo(960, 60);
 
                 worksheet.Row(12).Height = 40;
