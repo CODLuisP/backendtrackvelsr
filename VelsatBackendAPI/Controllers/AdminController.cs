@@ -572,6 +572,25 @@ namespace VelsatBackendAPI.Controllers
             }
         }
 
+        [HttpGet("GetAuditoriaTracklog")]
+        public async Task<IActionResult> GetUltimosRegistrosAuditoriaTracklog(string accountID, string deviceID)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(accountID) || string.IsNullOrEmpty(deviceID))
+                {
+                    return BadRequest(new { message = "El accountID y deviceID no pueden ser nulos o vacíos" });
+                }
+
+                var registros = await _readOnlyUow.AdminRepository.GetUltimosRegistrosAuditoriaTracklog(accountID, deviceID);
+                return Ok(registros);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener la auditoría Tracklog", error = ex.Message });
+            }
+        }
+
         [HttpGet("GetAuditoriaGeneral")]
         public async Task<IActionResult> GetAuditoriaGeneral(int limit = 200, string modulo = null, string usuario = null)
         {

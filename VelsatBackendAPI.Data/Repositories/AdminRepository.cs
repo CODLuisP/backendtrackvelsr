@@ -278,6 +278,21 @@ namespace VelsatBackendAPI.Data.Repositories
             return resultado;
         }
 
+        public async Task<IEnumerable<AuditoriaTracklog>> GetUltimosRegistrosAuditoriaTracklog(string accountID, string deviceID)
+        {
+            var sql = @"SELECT id, accountID, deviceID, fecharegistro, lastenvio, lastrespuesta
+                        FROM auditoriatracklog
+                        WHERE accountID = @AccountID AND deviceID = @DeviceID
+                        ORDER BY fecharegistro DESC
+                        LIMIT 5";
+
+            var resultado = await _defaultConnection.QueryAsync<AuditoriaTracklog>(sql,
+                new { AccountID = accountID, DeviceID = deviceID },
+                transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
 
         //----------------------------------AUDITORÍA GENERAL----------------------------------------//
         public async Task RegistrarAuditoria(string usuario, string modulo, string accion, string entidad, string detalle)
