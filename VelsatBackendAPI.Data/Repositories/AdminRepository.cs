@@ -293,6 +293,15 @@ namespace VelsatBackendAPI.Data.Repositories
             return resultado;
         }
 
+        public async Task<IEnumerable<DeviceTracklog>> GetUnidadesTracklog()
+        {
+            var sql = @"SELECT accountID, deviceID FROM device WHERE tracklog = '1'";
+
+            var resultado = await _defaultConnection.QueryAsync<DeviceTracklog>(sql, transaction: _defaultTransaction);
+
+            return resultado;
+        }
+
 
         //----------------------------------AUDITORÍA GENERAL----------------------------------------//
         public async Task RegistrarAuditoria(string usuario, string modulo, string accion, string entidad, string detalle)

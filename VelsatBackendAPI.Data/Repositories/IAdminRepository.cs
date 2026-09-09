@@ -56,6 +56,8 @@ namespace VelsatBackendAPI.Data.Repositories
 
         Task<IEnumerable<AuditoriaTracklog>> GetUltimosRegistrosAuditoriaTracklog(string accountID, string deviceID);
 
+        Task<IEnumerable<DeviceTracklog>> GetUnidadesTracklog();
+
         //AUDITORÍA GENERAL (registro de movimientos)
         Task RegistrarAuditoria(string usuario, string modulo, string accion, string entidad, string detalle);
 

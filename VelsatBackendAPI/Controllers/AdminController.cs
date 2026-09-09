@@ -572,6 +572,20 @@ namespace VelsatBackendAPI.Controllers
             }
         }
 
+        [HttpGet("GetUnidadesTracklog")]
+        public async Task<IActionResult> GetUnidadesTracklog()
+        {
+            try
+            {
+                var devices = await _readOnlyUow.AdminRepository.GetUnidadesTracklog();
+                return Ok(devices);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener las unidades Tracklog", error = ex.Message });
+            }
+        }
+
         [HttpGet("GetAuditoriaTracklog")]
         public async Task<IActionResult> GetUltimosRegistrosAuditoriaTracklog(string accountID, string deviceID)
         {
