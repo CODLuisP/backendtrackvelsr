@@ -104,7 +104,6 @@ namespace VelsatBackendAPI.Data.Services
             {
                 from = new { email = RemitenteEmail, name = RemitenteNombre },
                 to = new[] { new { email = correo } },
-                cc = new[] { new { email = "cmyg@velsat.com.pe" } },
                 subject = tituloAlerta,
                 html = GenerarCuerpoCorreo(alerta)
             };
