@@ -4,8 +4,10 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Mail;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using VelsatBackendAPI.Data.Repositories;
@@ -16,10 +18,20 @@ namespace VelsatBackendAPI.Data.Services
     public class AlertaCorreoService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<AlertaCorreoService> _logger;
 
-        public AlertaCorreoService(IServiceProvider serviceProvider)
+        // TODO: mover a variables de entorno (mismo patrón que las ConnectionStrings)
+        private const string MailerSendApiUrl = "https://api.mailersend.com/v1/email";
+        private const string MailerSendApiToken = "mlsn.703ae2fd8dc61cdc70947b80c28ff29e2ffb9a4e50bd0b1cc73ca6ea6d09ecd7";
+        private const string RemitenteEmail = "alertas@ideatec.com.pe";
+        private const string RemitenteNombre = "Velsat SAC";
+
+        private static readonly HttpClient _httpClient = new HttpClient();
+
+        public AlertaCorreoService(IServiceProvider serviceProvider, ILogger<AlertaCorreoService> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,6 +63,7 @@ namespace VelsatBackendAPI.Data.Services
                             }
                             catch (Exception ex)
                             {
+                                _logger.LogError(ex, "Error enviando correo de alerta para el evento {Codigo} (device {DeviceID})", alerta.Codigo, alerta.DeviceID);
                             }
                         }
 
@@ -63,6 +76,7 @@ namespace VelsatBackendAPI.Data.Services
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error en el ciclo de AlertaCorreoService");
                 }
                 finally
                 {
@@ -78,13 +92,6 @@ namespace VelsatBackendAPI.Data.Services
 
         private async Task EnviarCorreoAsync(string correo, RegistroAlarmas alerta)
         {
-            using var smtp = new SmtpClient("mail.velsat.com.pe")
-            {
-                Port = 587,
-                Credentials = new NetworkCredential("cmyg@velsat.com.pe", "E&=z47Xp4k=N"),
-                EnableSsl = true
-            };
-
             string tituloAlerta = (alerta.EventType, alerta.AlarmType) switch
             {
                 ("alarm", "powerCut") => "🚨 Alerta! Desconexión de Batería",
@@ -93,18 +100,28 @@ namespace VelsatBackendAPI.Data.Services
                 _ => "🚨 Alerta! Evento Desconocido"
             };
 
-            var mail = new MailMessage(
-                new MailAddress("cmyg@velsat.com.pe", "Velsat SAC"),
-                new MailAddress(correo))
+            var payload = new
             {
-                Subject = tituloAlerta,
-                Body = GenerarCuerpoCorreo(alerta),
-                IsBodyHtml = true
+                from = new { email = RemitenteEmail, name = RemitenteNombre },
+                to = new[] { new { email = correo } },
+                cc = new[] { new { email = "cmyg@velsat.com.pe" } },
+                subject = tituloAlerta,
+                html = GenerarCuerpoCorreo(alerta)
             };
 
-            mail.To.Add("cmyg@velsat.com.pe");
+            using var request = new HttpRequestMessage(HttpMethod.Post, MailerSendApiUrl)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", MailerSendApiToken);
 
-            await smtp.SendMailAsync(mail);
+            using var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                throw new Exception($"MailerSend respondió {(int)response.StatusCode} {response.StatusCode}: {body}");
+            }
         }
 
         private string GenerarCuerpoCorreo(RegistroAlarmas alerta)
@@ -114,25 +131,20 @@ namespace VelsatBackendAPI.Data.Services
             var hora = fechaHora.ToString("HH:mm:ss");
 
             string tituloAlerta;
-            string imagenAlerta;
 
             switch (alerta.EventType, alerta.AlarmType)
             {
                 case ("alarm", "powerCut"):
                     tituloAlerta = "DESCONEXIÓN DE BATERÍA";
-                    imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/bateria_c59x4t.jpg";
                     break;
                 case ("alarm", "sos"):
                     tituloAlerta = "BOTÓN DE PÁNICO";
-                    imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/panico_i540gn.jpg";
                     break;
                 case ("deviceOverspeed", _):
                     tituloAlerta = "EXCESO DE VELOCIDAD";
-                    imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/bateria_c59x4t.jpg";
                     break;
                 default:
                     tituloAlerta = "ALERTA DESCONOCIDA";
-                    imagenAlerta = "https://res.cloudinary.com/dyc4ik1ko/image/upload/bateria_c59x4t.jpg";
                     break;
             }
 
@@ -164,11 +176,6 @@ namespace VelsatBackendAPI.Data.Services
             <div class='container'>
                 <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #fff; padding: 20px; text-align: center;'>
                     <tr>
-                        <td style='padding-bottom: 10px;'>
-                            <img src='https://res.cloudinary.com/dyc4ik1ko/image/upload/velsatLogo_n8ovrs.jpg' alt='Logo Velsat' style='max-width: 170px; height: auto;' />
-                        </td>
-                    </tr>
-                    <tr>
                         <td>
                             <h2 style='margin: 0; font-size: 14px; color: #001d3d;'>CENTRAL DE MONITOREO Y GESTIÓN</h2>
                         </td>
@@ -186,10 +193,6 @@ namespace VelsatBackendAPI.Data.Services
                                 <p style='margin: 3px 0; font-size: 11px;'><strong>Hora:</strong> {hora}</p>
                                 <p style='margin: 3px 0; font-size: 11px;'><strong>Ubicación:</strong> {alerta.Latitude}, {alerta.Longitude}</p>
                             </div>
-                        </div>
-
-                        <div style='width: 40%; text-align: right;'>
-                            <img src='{imagenAlerta}' alt='Imagen Alerta' style='width: 100%; max-width: 200px; height: auto;' />
                         </div>
                     </div>
 
