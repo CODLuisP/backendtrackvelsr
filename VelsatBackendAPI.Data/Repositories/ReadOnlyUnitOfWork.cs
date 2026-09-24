@@ -25,6 +25,8 @@ namespace VelsatBackendAPI.Data.Repositories
         private readonly Lazy<IUserRepository> _userRepository;
         private readonly Lazy<IAdminRepository> _adminRepository;
         private readonly Lazy<IGeocercaRepository> _geocercaRepository;
+        private readonly Lazy<IGeocercasRepository> _geocercasRepository;
+        private readonly Lazy<IGeocercasVehiculosRepository> _geocercasVehiculosRepository;
 
         private bool _disposed = false;
         private readonly object _lockObject = new object();
@@ -49,6 +51,10 @@ namespace VelsatBackendAPI.Data.Repositories
             _adminRepository = new Lazy<IAdminRepository>(() => new AdminRepository(DefaultConnection, null, null, null));
 
             _geocercaRepository = new Lazy<IGeocercaRepository>(() => new GeocercaRepository(DefaultConnection, null));
+
+            _geocercasRepository = new Lazy<IGeocercasRepository>(() => new GeocercasRepository(DefaultConnection, null));
+
+            _geocercasVehiculosRepository = new Lazy<IGeocercasVehiculosRepository>(() => new GeocercasVehiculosRepository(DefaultConnection, null));
 
         }
 
@@ -168,6 +174,26 @@ namespace VelsatBackendAPI.Data.Repositories
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
                 return _geocercaRepository.Value;
+            }
+        }
+
+        public IGeocercasRepository GeocercasRepository
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
+                return _geocercasRepository.Value;
+            }
+        }
+
+        public IGeocercasVehiculosRepository GeocercasVehiculosRepository
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(nameof(ReadOnlyUnitOfWork));
+                return _geocercasVehiculosRepository.Value;
             }
         }
 
