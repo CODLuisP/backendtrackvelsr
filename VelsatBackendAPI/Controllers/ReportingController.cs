@@ -18,6 +18,8 @@ namespace VelsatBackendAPI.Controllers
 
     public class ReportingController : ControllerBase
     {
+        private const int MaxDiasReporteGeneral = 31;
+
         private readonly IReadOnlyUnitOfWork _readOnlyUow;
         private static readonly string CarLogoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "CarLogo.jpg");
         private static readonly string VelsatLogoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "VelsatLogo.png");
@@ -33,7 +35,7 @@ namespace VelsatBackendAPI.Controllers
         {
             try
             {
-                var resultado = _readOnlyUow.HistoricosRepository.GetDataReporting(fechaini, fechafin, deviceID, accountID);
+                var resultado = _readOnlyUow.HistoricosRepository.GetDataReporting(fechaini, fechafin, deviceID, accountID, MaxDiasReporteGeneral);
                 return Ok(resultado);
             }
             catch (Exception ex)
@@ -47,7 +49,7 @@ namespace VelsatBackendAPI.Controllers
         {
             try
             {
-                var datos = await _readOnlyUow.HistoricosRepository.GetDataReporting(fechaini, fechafin, deviceID, accountID);
+                var datos = await _readOnlyUow.HistoricosRepository.GetDataReporting(fechaini, fechafin, deviceID, accountID, MaxDiasReporteGeneral);
 
                 var user = _readOnlyUow.HistoricosRepository.UserName(deviceID);
                 var excelBytes = ConvertDataExcel(datos.ListaTablas, fechaini, fechafin, deviceID, user);
