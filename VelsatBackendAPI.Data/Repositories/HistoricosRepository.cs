@@ -29,7 +29,7 @@ namespace VelsatBackendAPI.Data.Repositories
             _secondTransaction = secondTransaction;
         }
 
-        public async Task<DatosReporting> GetDataReporting(string fechaini, string fechafin, string deviceID, string accountID, int maxDias = 3)
+        public async Task<DatosReporting> GetDataReporting(string fechaini, string fechafin, string deviceID, string accountID)
         {
             const string sqlAccountFromDevice = "SELECT accountID FROM device WHERE deviceID = @DeviceID";
             var newAccountID = _defaultConnection.QueryFirstOrDefault<string>(
@@ -58,11 +58,11 @@ namespace VelsatBackendAPI.Data.Repositories
             var resultadoDias = CalcularDias(fechaini, fechafin);
             double numdias = resultadoDias.NumDias;
 
-            if (numdias > maxDias)
+            if (numdias > 3)
             {
                 return new DatosReporting
                 {
-                    Mensaje = $"La diferencia entre las fechas es mayor a {maxDias} días; seleccione otras fechas"
+                    Mensaje = "La diferencia entre las fechas es mayor a 3 días; seleccione otras fechas"
                 };
             }
 
