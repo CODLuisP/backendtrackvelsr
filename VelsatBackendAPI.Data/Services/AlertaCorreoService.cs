@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -20,18 +21,20 @@ namespace VelsatBackendAPI.Data.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AlertaCorreoService> _logger;
 
-        // TODO: mover a variables de entorno (mismo patrón que las ConnectionStrings)
-        private const string MailerSendApiUrl = "https://api.mailersend.com/v1/email";
-        private const string MailerSendApiToken = "mlsn.703ae2fd8dc61cdc70947b80c28ff29e2ffb9a4e50bd0b1cc73ca6ea6d09ecd7";
-        private const string RemitenteEmail = "alertas@ideatec.com.pe";
         private const string RemitenteNombre = "Velsat SAC";
 
         private static readonly HttpClient _httpClient = new HttpClient();
 
-        public AlertaCorreoService(IServiceProvider serviceProvider, ILogger<AlertaCorreoService> logger)
+        // Correos:Url y Correos:ApiKey (variables de entorno Correos__Url / Correos__ApiKey)
+        private readonly string _correosUrl;
+        private readonly string _correosApiKey;
+
+        public AlertaCorreoService(IServiceProvider serviceProvider, ILogger<AlertaCorreoService> logger, IConfiguration configuration)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _correosUrl = configuration["Correos:Url"] ?? "https://do.velsat.pe:8443/correos/api/email/send";
+            _correosApiKey = configuration["Correos:ApiKey"] ?? "";
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -100,26 +103,28 @@ namespace VelsatBackendAPI.Data.Services
                 _ => "🚨 Alerta! Evento Desconocido"
             };
 
+            // Sin "from": la API usa su remitente por defecto (solo acepta dominios permitidos, p. ej. velsat.pe)
             var payload = new
             {
-                from = new { email = RemitenteEmail, name = RemitenteNombre },
-                to = new[] { new { email = correo } },
+                fromName = RemitenteNombre,
+                // TEMPORAL: copia a dguevara@velsat.com.pe para verificar el envío por la API; quitar al validar
+                to = new[] { correo, "dguevara@velsat.com.pe" },
                 subject = tituloAlerta,
                 html = GenerarCuerpoCorreo(alerta)
             };
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, MailerSendApiUrl)
+            using var request = new HttpRequestMessage(HttpMethod.Post, _correosUrl)
             {
                 Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
             };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", MailerSendApiToken);
+            request.Headers.Add("X-API-Key", _correosApiKey);
 
             using var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
-                throw new Exception($"MailerSend respondió {(int)response.StatusCode} {response.StatusCode}: {body}");
+                throw new Exception($"API de correos respondió {(int)response.StatusCode} {response.StatusCode}: {body}");
             }
         }
 
